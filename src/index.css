@@ -54,6 +54,14 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Correção para as bordas dos inputs */
+  input:focus, 
+  textarea:focus, 
+  select:focus,
+  [data-radix-select-trigger]:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-0 !important;
+  }
 }
 
 /* Custom scrollbar */

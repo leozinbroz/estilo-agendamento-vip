@@ -143,9 +143,11 @@ const Schedule = () => {
   };
 
   return (
-    <div className="h-full pb-4">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <Card className="bg-barber-blue border-gray-700 h-full">
+    <div className="h-full pb-4 flex flex-col">
+      {/* Layout para desktop: duas colunas e botão em 100% da largura abaixo */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-grow">
+        {/* Coluna da esquerda: Escolha a Data */}
+        <Card className="bg-barber-blue border-gray-700 h-auto">
           <CardHeader>
             <CardTitle className="text-barber-gold">Escolha a Data</CardTitle>
           </CardHeader>
@@ -162,13 +164,14 @@ const Schedule = () => {
           </CardContent>
         </Card>
         
-        <Card className="bg-barber-blue border-gray-700 h-full">
+        {/* Coluna da direita: Dados do Agendamento */}
+        <Card className="bg-barber-blue border-gray-700 h-auto">
           <CardHeader>
             <CardTitle className="text-barber-gold">Dados do Agendamento</CardTitle>
           </CardHeader>
-          <CardContent className="h-full">
-            <form onSubmit={handleSubmit} className="space-y-4 flex flex-col h-full">
-              <ScrollArea className="flex-grow pr-2">
+          <CardContent>
+            <form id="appointmentForm" onSubmit={handleSubmit} className="space-y-4">
+              <ScrollArea className="pr-2 max-h-[500px]">
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-barber-light">Nome do Cliente</label>
@@ -245,17 +248,21 @@ const Schedule = () => {
                   </div>
                 </div>
               </ScrollArea>
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-barber-gold hover:bg-amber-600 text-barber-dark mt-4 sticky bottom-0"
-                disabled={isLoading || !selectedDate || !selectedTime || !selectedService || !clientName || !clientPhone}
-              >
-                {isLoading ? "Agendando..." : "Confirmar Agendamento"}
-              </Button>
             </form>
           </CardContent>
         </Card>
+      </div>
+      
+      {/* Botão de confirmação em 100% da largura */}
+      <div className="mt-4">
+        <Button 
+          type="submit"
+          form="appointmentForm"
+          className="w-full bg-barber-gold hover:bg-amber-600 text-barber-dark py-3"
+          disabled={isLoading || !selectedDate || !selectedTime || !selectedService || !clientName || !clientPhone}
+        >
+          {isLoading ? "Agendando..." : "Confirmar Agendamento"}
+        </Button>
       </div>
     </div>
   );

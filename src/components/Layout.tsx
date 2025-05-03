@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useBarberShop } from '@/contexts/BarberShopContext';
 import { useLocation, Link } from 'react-router-dom';
@@ -50,12 +49,11 @@ export function Layout({ children }: LayoutProps) {
     };
   }, []);
 
-  // Fechar sidebar ao navegar em dispositivos móveis
+  // Fechar sidebar ao navegar em dispositivos móveis ou ao clicar em um item de menu
   useEffect(() => {
-    if (isMobile) {
-      setSidebarOpen(false);
-    }
-  }, [location.pathname, isMobile]);
+    // Fechar sempre ao navegar, independente do tamanho da tela
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   // Fechar sidebar ao clicar fora dele (em ambos mobile e desktop)
   useEffect(() => {
