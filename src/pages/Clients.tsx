@@ -49,7 +49,7 @@ const Clients = () => {
         mostUsedServiceId = id;
         maxCount = count;
       }
-    });
+    }
     
     const mostUsedService = services.find(s => s.id === mostUsedServiceId);
     
@@ -89,9 +89,9 @@ const Clients = () => {
             />
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="space-y-3">
             {sortedClients.length === 0 ? (
-              <p className="text-center py-8 text-barber-light col-span-full">
+              <p className="text-center py-8 text-barber-light">
                 {searchQuery ? "Nenhum cliente encontrado." : "Nenhum cliente cadastrado."}
               </p>
             ) : (
