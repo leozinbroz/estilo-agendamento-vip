@@ -31,7 +31,10 @@ export function Layout({ children }: LayoutProps) {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
       if (window.innerWidth >= 1024) {
-        setSidebarOpen(true);
+        // Não forçar o estado do sidebar em desktop, apenas definir inicialmente
+        if (sidebarOpen === undefined) {
+          setSidebarOpen(true);
+        }
       } else {
         setSidebarOpen(false);
       }
@@ -97,7 +100,7 @@ export function Layout({ children }: LayoutProps) {
           "fixed lg:relative z-30 flex flex-col w-64 h-full transition-transform duration-300 ease-in-out bg-barber-blue border-r border-gray-700",
           sidebarOpen 
             ? "transform translate-x-0" 
-            : "transform -translate-x-full lg:translate-x-0 lg:w-16"
+            : "transform -translate-x-full lg:translate-x-full"
         )}
       >
         {/* Cabeçalho da Sidebar */}
@@ -111,14 +114,12 @@ export function Layout({ children }: LayoutProps) {
               {config.name.charAt(0)}
             </div>
           )}
-          {isMobile && (
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="text-gray-400 hover:text-white"
-            >
-              <X size={20} />
-            </button>
-          )}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="text-gray-400 hover:text-white"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         {/* Links de navegação */}

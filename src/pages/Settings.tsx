@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { X, Plus, Pencil } from 'lucide-react';
+import { X, Plus, Pencil, Clock } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Máscara para formato de telefone
 const formatPhoneNumber = (value: string) => {
@@ -35,6 +36,21 @@ const formatPhoneNumber = (value: string) => {
   
   return formatted;
 };
+
+// Gerar opções de horário
+const generateTimeOptions = () => {
+  const options = [];
+  for (let h = 6; h <= 22; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      const hour = h.toString().padStart(2, '0');
+      const minute = m.toString().padStart(2, '0');
+      options.push(`${hour}:${minute}`);
+    }
+  }
+  return options;
+};
+
+const timeOptions = generateTimeOptions();
 
 const Settings = () => {
   const { config, updateConfig, services, addService, updateService, deleteService } = useBarberShop();
@@ -218,27 +234,56 @@ const Settings = () => {
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-barber-light">Horário de Início</label>
-                  <Input
-                    type="time"
-                    value={barberConfig.workingHours.start}
-                    onChange={(e) => updateConfigField('workingHours.start', e.target.value)}
-                    className="bg-barber-dark text-barber-light border-gray-700"
-                    required
-                  />
+              <div className="space-y-3">
+                <div className="flex items-center text-barber-light">
+                  <Clock className="h-5 w-5 mr-2" />
+                  <label className="font-medium">Horário de Funcionamento</label>
                 </div>
                 
-                <div className="space-y-2">
-                  <label className="text-barber-light">Horário de Término</label>
-                  <Input
-                    type="time"
-                    value={barberConfig.workingHours.end}
-                    onChange={(e) => updateConfigField('workingHours.end', e.target.value)}
-                    className="bg-barber-dark text-barber-light border-gray-700"
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4 bg-barber-dark p-3 rounded-md border border-gray-700">
+                  <div className="space-y-2">
+                    <label className="text-barber-light text-sm">Horário de Abertura</label>
+                    <Select 
+                      value={barberConfig.workingHours.start}
+                      onValueChange={(value) => updateConfigField('workingHours.start', value)}
+                    >
+                      <SelectTrigger className="bg-barber-blue text-barber-light border-gray-700">
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-barber-blue text-barber-light border-gray-700 max-h-56">
+                        {timeOptions.map((time) => (
+                          <SelectItem key={`start-${time}`} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-barber-light text-sm">Horário de Encerramento</label>
+                    <Select 
+                      value={barberConfig.workingHours.end}
+                      onValueChange={(value) => updateConfigField('workingHours.end', value)}
+                    >
+                      <SelectTrigger className="bg-barber-blue text-barber-light border-gray-700">
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-barber-blue text-barber-light border-gray-700 max-h-56">
+                        {timeOptions.map((time) => (
+                          <SelectItem key={`end-${time}`} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="col-span-2 pt-1 text-center text-xs text-barber-gold">
+                    {barberConfig.workingHours.start && barberConfig.workingHours.end && (
+                      <p>A barbearia abrirá das {barberConfig.workingHours.start} às {barberConfig.workingHours.end}</p>
+                    )}
+                  </div>
                 </div>
               </div>
               

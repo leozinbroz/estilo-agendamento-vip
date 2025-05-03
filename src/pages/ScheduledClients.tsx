@@ -5,7 +5,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import {
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { 
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -25,9 +27,13 @@ const formatCurrency = (value: number) => {
 };
 
 const ScheduledClients = () => {
-  const { appointments, clients, services, config, deleteAppointment } = useBarberShop();
+  const { appointments, clients, services, config, deleteAppointment, updateAppointment } = useBarberShop();
   const { toast } = useToast();
   const [deleteAppointmentId, setDeleteAppointmentId] = useState<string | null>(null);
+  
+  // Estado para edição de agendamento
+  const [editingAppointment, setEditingAppointment] = useState<any | null>(null);
+  const [editNotes, setEditNotes] = useState('');
 
   // Filtragem por data
   const today = new Date();
@@ -96,12 +102,38 @@ const ScheduledClients = () => {
     });
     setDeleteAppointmentId(null);
   };
+  
+  // Função para salvar a edição de um agendamento
+  const handleSaveEdit = () => {
+    if (editingAppointment) {
+      const updatedAppointment = {
+        ...editingAppointment,
+        notes: editNotes
+      };
+      
+      updateAppointment(updatedAppointment);
+      setEditingAppointment(null);
+      
+      toast({
+        title: "Agendamento atualizado",
+        description: "As observações foram atualizadas com sucesso."
+      });
+    }
+  };
+  
+  // Abrir modal de edição
+  const openEditModal = (appointment: any) => {
+    setEditingAppointment(appointment);
+    setEditNotes(appointment.notes || '');
+  };
 
   // Renderizar um agendamento
   const renderAppointment = (app: any) => {
     const client = clients.find(c => c.id === app.clientId);
     const service = services.find(s => s.id === app.serviceId);
     const appointmentDate = new Date(app.date);
+    
+    if (!client || !service) return null;
     
     return (
       <div 
@@ -110,12 +142,11 @@ const ScheduledClients = () => {
       >
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="font-medium text-barber-light">{client?.name}</h3>
-            <p className="text-sm text-barber-light">{client?.phone}</p>
-            <div className="mt-1">
-              <span className="text-barber-gold text-sm">{service?.name}</span>
+            <h3 className="font-medium text-barber-light text-lg">{client.name}</h3>
+            <div className="mt-1 mb-2">
+              <span className="text-barber-gold">{service.name}</span>
               <span className="text-barber-light text-xs ml-2">
-                {formatCurrency(service?.price || 0)}
+                {formatCurrency(service.price)}
               </span>
             </div>
             {app.notes && (
@@ -132,11 +163,20 @@ const ScheduledClients = () => {
                 minute: '2-digit' 
               })}
             </div>
-            <div className="text-xs text-barber-light">
+            <div className="text-xs text-barber-light mb-2">
               {appointmentDate.toLocaleDateString('pt-BR')}
             </div>
             
-            <div className="flex space-x-2 mt-2">
+            <div className="flex space-x-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => openEditModal(app)}
+                className="text-barber-gold border-barber-gold hover:bg-barber-gold/20"
+              >
+                Editar
+              </Button>
+              
               <Button 
                 size="sm" 
                 variant="outline" 
@@ -241,6 +281,55 @@ const ScheduledClients = () => {
               className="bg-red-600 text-white hover:bg-red-700"
             >
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Dialog para editar agendamento */}
+      <AlertDialog
+        open={!!editingAppointment}
+        onOpenChange={(open) => !open && setEditingAppointment(null)}
+      >
+        <AlertDialogContent className="bg-barber-blue text-barber-light border-gray-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-barber-gold">Editar Agendamento</AlertDialogTitle>
+          </AlertDialogHeader>
+          
+          <div className="space-y-4 py-2">
+            {editingAppointment && (
+              <>
+                <div className="text-sm">
+                  <p><span className="font-medium">Cliente:</span> {clients.find(c => c.id === editingAppointment.clientId)?.name}</p>
+                  <p><span className="font-medium">Serviço:</span> {services.find(s => s.id === editingAppointment.serviceId)?.name}</p>
+                  <p><span className="font-medium">Data/Hora:</span> {
+                    new Date(editingAppointment.date).toLocaleDateString('pt-BR') + ' às ' + 
+                    new Date(editingAppointment.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                  }</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Observações</label>
+                  <Textarea 
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                    placeholder="Adicione observações sobre este agendamento"
+                    className="bg-barber-dark text-barber-light border-gray-700"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-barber-dark text-barber-light hover:bg-gray-700 border-gray-700">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleSaveEdit}
+              className="bg-barber-gold text-barber-dark hover:bg-amber-600"
+            >
+              Salvar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
