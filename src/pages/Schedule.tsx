@@ -98,6 +98,11 @@ const Schedule = () => {
         phone: clientPhone
       });
       
+      // Verificar se o cliente foi criado ou encontrado corretamente
+      if (!client) {
+        throw new Error("Não foi possível criar ou encontrar o cliente");
+      }
+      
       // Criar agendamento
       addAppointment({
         clientId: client.id,

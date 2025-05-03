@@ -45,7 +45,6 @@ const ScheduledClients = () => {
   // Atualizar horários disponíveis quando a data ou serviço mudam na edição
   useEffect(() => {
     if (editingAppointment && editDate && editServiceId) {
-      // Não incluir o próprio agendamento na verificação de disponibilidade
       const slots = getAvailableTimeSlots(editDate, editServiceId, editingAppointment.id);
       setAvailableTimes(slots);
       

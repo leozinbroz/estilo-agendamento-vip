@@ -43,12 +43,12 @@ interface BarberShopContextType {
   addService: (service: Omit<Service, "id">) => void;
   updateService: (service: Service) => void;
   deleteService: (id: string) => void;
-  addClient: (client: Omit<Client, "id">) => void;
+  addClient: (client: Omit<Client, "id">) => Client;
   findClientByPhone: (phone: string) => Client | undefined;
   addAppointment: (appointment: Omit<Appointment, "id">) => void;
   updateAppointment: (appointment: Appointment) => void;
   deleteAppointment: (id: string) => void;
-  getAvailableTimeSlots: (date: Date, serviceId: string) => string[];
+  getAvailableTimeSlots: (date: Date, serviceId: string, excludeAppointmentId?: string) => string[];
 }
 
 // Valores padrão para o contexto
@@ -148,7 +148,7 @@ export const BarberShopProvider = ({ children }: { children: ReactNode }) => {
     setServices(services.filter(service => service.id !== id));
   };
 
-  const addClient = (client: Omit<Client, "id">) => {
+  const addClient = (client: Omit<Client, "id">): Client => {
     // Verificar se o cliente já existe pelo telefone
     const existingClient = clients.find(c => c.phone === client.phone);
     if (existingClient) {
@@ -186,7 +186,7 @@ export const BarberShopProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Função para obter horários disponíveis
-  const getAvailableTimeSlots = (date: Date, serviceId: string): string[] => {
+  const getAvailableTimeSlots = (date: Date, serviceId: string, excludeAppointmentId?: string): string[] => {
     const selectedDate = new Date(date);
     selectedDate.setHours(0, 0, 0, 0);
     const today = new Date();
@@ -220,6 +220,11 @@ export const BarberShopProvider = ({ children }: { children: ReactNode }) => {
     
     // Remover slots que se sobrepõem com agendamentos existentes
     const dayAppointments = appointments.filter(app => {
+      // Excluir o agendamento que está sendo editado (se fornecido)
+      if (excludeAppointmentId && app.id === excludeAppointmentId) {
+        return false;
+      }
+      
       const appDate = new Date(app.date);
       appDate.setHours(0, 0, 0, 0);
       return appDate.getTime() === selectedDate.getTime();
