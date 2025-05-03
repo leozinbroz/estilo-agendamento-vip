@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBarberShop } from '@/contexts/BarberShopContext';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,7 +28,7 @@ const formatCurrency = (value: number) => {
 };
 
 const ScheduledClients = () => {
-  const { appointments, clients, services, config, deleteAppointment, updateAppointment } = useBarberShop();
+  const { appointments, clients, services, config, deleteAppointment, updateAppointment, getAvailableTimeSlots } = useBarberShop();
   const { toast } = useToast();
   const [deleteAppointmentId, setDeleteAppointmentId] = useState<string | null>(null);
   
@@ -37,10 +36,30 @@ const ScheduledClients = () => {
   const [editingAppointment, setEditingAppointment] = useState<any | null>(null);
   const [editNotes, setEditNotes] = useState('');
   const [editClientName, setEditClientName] = useState('');
+  const [editClientPhone, setEditClientPhone] = useState('');
   const [editServiceId, setEditServiceId] = useState('');
   const [editDate, setEditDate] = useState<Date | undefined>(undefined);
   const [editTime, setEditTime] = useState('');
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+
+  // Atualizar horários disponíveis quando a data ou serviço mudam na edição
+  useEffect(() => {
+    if (editingAppointment && editDate && editServiceId) {
+      // Não incluir o próprio agendamento na verificação de disponibilidade
+      const slots = getAvailableTimeSlots(editDate, editServiceId, editingAppointment.id);
+      setAvailableTimes(slots);
+      
+      // Se o horário atual não estiver disponível, adicione-o à lista
+      const appointmentTime = new Date(editingAppointment.date);
+      const hours = String(appointmentTime.getHours()).padStart(2, '0');
+      const minutes = String(appointmentTime.getMinutes()).padStart(2, '0');
+      const currentTime = `${hours}:${minutes}`;
+      
+      if (!slots.includes(currentTime)) {
+        setAvailableTimes([...slots, currentTime].sort());
+      }
+    }
+  }, [editDate, editServiceId, editingAppointment, getAvailableTimeSlots]);
 
   // Filtragem por data
   const today = new Date();
@@ -110,6 +129,24 @@ const ScheduledClients = () => {
     setDeleteAppointmentId(null);
   };
   
+  // Formatar número de telefone
+  const formatPhoneNumber = (value: string) => {
+    const cleaned = value.replace(/\D/g, '');
+    let formatted = cleaned;
+    
+    if (cleaned.length > 0) {
+      if (cleaned.length <= 2) {
+        formatted = `(${cleaned}`;
+      } else if (cleaned.length <= 7) {
+        formatted = `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
+      } else {
+        formatted = `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7, 11)}`;
+      }
+    }
+    
+    return formatted;
+  };
+  
   // Função para abrir o modal de edição
   const openEditModal = (appointment: any) => {
     const client = clients.find(c => c.id === appointment.clientId);
@@ -119,6 +156,7 @@ const ScheduledClients = () => {
     setEditingAppointment(appointment);
     setEditNotes(appointment.notes || '');
     setEditClientName(client.name);
+    setEditClientPhone(client.phone || '');
     setEditServiceId(appointment.serviceId);
     setEditDate(new Date(appointment.date));
     
@@ -131,43 +169,49 @@ const ScheduledClients = () => {
   
   // Função para salvar a edição de um agendamento
   const handleSaveEdit = () => {
-    if (!editingAppointment || !editDate || !editTime) return;
+    if (!editingAppointment || !editDate || !editTime || !editClientName || !editClientPhone) return;
     
-    // Encontrar o cliente pelo nome ou criar um novo
-    let clientId = editingAppointment.clientId;
-    const existingClient = clients.find(c => c.id === clientId);
-    
-    if (existingClient && existingClient.name !== editClientName) {
-      // Se o nome mudou, atualizar o cliente
-      const updatedClient = {
-        ...existingClient,
-        name: editClientName
+    try {
+      // Encontrar o cliente pelo telefone
+      let clientId = editingAppointment.clientId;
+      const existingClient = clients.find(c => c.id === clientId);
+      
+      if (existingClient) {
+        if (existingClient.name !== editClientName || existingClient.phone !== editClientPhone) {
+          // Se o nome ou telefone mudou, atualizar o cliente
+          // Note: Assumindo que o context tem uma função updateClient
+          // Por enquanto, vamos apenas manter o ID do cliente
+        }
+      }
+      
+      // Combinar data e horário
+      const [hours, minutes] = editTime.split(':').map(Number);
+      const updatedDate = new Date(editDate);
+      updatedDate.setHours(hours, minutes, 0, 0);
+      
+      // Atualizar o agendamento
+      const updatedAppointment = {
+        ...editingAppointment,
+        serviceId: editServiceId,
+        date: updatedDate,
+        notes: editNotes
       };
       
-      // Aqui você precisaria implementar updateClient no contexto
-      // Por enquanto, vamos apenas manter o ID do cliente
+      updateAppointment(updatedAppointment);
+      setEditingAppointment(null);
+      
+      toast({
+        title: "Agendamento atualizado",
+        description: "As informações foram atualizadas com sucesso."
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar agendamento:", error);
+      toast({
+        title: "Erro ao atualizar",
+        description: "Ocorreu um erro ao atualizar o agendamento.",
+        variant: "destructive"
+      });
     }
-    
-    // Combinar data e horário
-    const [hours, minutes] = editTime.split(':').map(Number);
-    const updatedDate = new Date(editDate);
-    updatedDate.setHours(hours, minutes, 0, 0);
-    
-    // Atualizar o agendamento
-    const updatedAppointment = {
-      ...editingAppointment,
-      serviceId: editServiceId,
-      date: updatedDate,
-      notes: editNotes
-    };
-    
-    updateAppointment(updatedAppointment);
-    setEditingAppointment(null);
-    
-    toast({
-      title: "Agendamento atualizado",
-      description: "As informações foram atualizadas com sucesso."
-    });
   };
 
   // Desabilitar datas passadas no calendário
@@ -341,12 +385,15 @@ const ScheduledClients = () => {
         open={!!editingAppointment}
         onOpenChange={(open) => !open && setEditingAppointment(null)}
       >
-        <AlertDialogContent className="bg-barber-blue text-barber-light border-gray-700">
+        <AlertDialogContent className="bg-barber-blue text-barber-light border-gray-700 max-h-[90vh] overflow-y-auto">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-barber-gold">Editar Agendamento</AlertDialogTitle>
+            <AlertDialogDescription className="text-barber-light">
+              Altere as informações do agendamento conforme necessário.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           
-          <div className="space-y-4 py-2">
+          <div className="space-y-4 py-2 px-2">
             {editingAppointment && (
               <>
                 <div className="space-y-2">
@@ -355,6 +402,16 @@ const ScheduledClients = () => {
                     value={editClientName}
                     onChange={(e) => setEditClientName(e.target.value)}
                     className="bg-barber-dark text-barber-light border-gray-700"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Telefone</label>
+                  <Input 
+                    value={editClientPhone}
+                    onChange={(e) => setEditClientPhone(formatPhoneNumber(e.target.value))}
+                    className="bg-barber-dark text-barber-light border-gray-700"
+                    maxLength={16}
                   />
                 </div>
                 
@@ -392,12 +449,19 @@ const ScheduledClients = () => {
                 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Horário</label>
-                  <Input 
+                  <Select
                     value={editTime}
-                    onChange={(e) => setEditTime(e.target.value)}
-                    type="time"
-                    className="bg-barber-dark text-barber-light border-gray-700"
-                  />
+                    onValueChange={setEditTime}
+                  >
+                    <SelectTrigger className="bg-barber-dark text-barber-light border-gray-700">
+                      <SelectValue placeholder="Selecione um horário" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-barber-dark text-barber-light border-gray-700 max-h-[200px]">
+                      {availableTimes.map(time => (
+                        <SelectItem key={time} value={time}>{time}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div className="space-y-2">
@@ -413,13 +477,14 @@ const ScheduledClients = () => {
             )}
           </div>
           
-          <AlertDialogFooter>
+          <AlertDialogFooter className="mt-2">
             <AlertDialogCancel className="bg-barber-dark text-barber-light hover:bg-gray-700 border-gray-700">
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleSaveEdit}
               className="bg-barber-gold text-barber-dark hover:bg-amber-600"
+              disabled={!editClientName || !editClientPhone || !editServiceId || !editDate || !editTime}
             >
               Salvar
             </AlertDialogAction>

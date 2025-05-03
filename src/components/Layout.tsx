@@ -57,7 +57,7 @@ export function Layout({ children }: LayoutProps) {
     }
   }, [location.pathname, isMobile]);
 
-  // Fechar sidebar ao clicar fora dele
+  // Fechar sidebar ao clicar fora dele (em ambos mobile e desktop)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (

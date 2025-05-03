@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const Schedule = () => {
   const { 
@@ -137,116 +138,120 @@ const Schedule = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-      <Card className="bg-barber-blue border-gray-700 h-full">
-        <CardHeader>
-          <CardTitle className="text-barber-gold">Escolha a Data</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-lg overflow-hidden bg-barber-dark p-1">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              disabled={isDateDisabled}
-              className="text-barber-light pointer-events-auto"
-            />
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card className="bg-barber-blue border-gray-700 h-full">
-        <CardHeader>
-          <CardTitle className="text-barber-gold">Dados do Agendamento</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4 flex flex-col h-full">
-            <div className="flex-grow space-y-4">
-              <div className="space-y-2">
-                <label className="text-barber-light">Nome do Cliente</label>
-                <Input
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                  placeholder="Nome"
-                  className="bg-barber-dark text-barber-light border-gray-700"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-barber-light">Telefone</label>
-                <Input
-                  value={clientPhone}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
-                  placeholder="(00) 00000-0000"
-                  maxLength={16}
-                  className="bg-barber-dark text-barber-light border-gray-700"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-barber-light">Serviço</label>
-                <Select 
-                  value={selectedService} 
-                  onValueChange={setSelectedService}
-                >
-                  <SelectTrigger className="bg-barber-dark text-barber-light border-gray-700">
-                    <SelectValue placeholder="Selecione um serviço" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-barber-dark text-barber-light border-gray-700">
-                    {services.map(service => (
-                      <SelectItem key={service.id} value={service.id}>{service.name} - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(service.price)}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-barber-light">Horário</label>
-                <Select 
-                  value={selectedTime} 
-                  onValueChange={setSelectedTime}
-                  disabled={!selectedService || !selectedDate || availableTimes.length === 0}
-                >
-                  <SelectTrigger className="bg-barber-dark text-barber-light border-gray-700">
-                    <SelectValue placeholder={
-                      !selectedService
-                        ? "Selecione um serviço primeiro"
-                        : !selectedDate
-                        ? "Selecione uma data primeiro"
-                        : availableTimes.length === 0
-                        ? "Nenhum horário disponível"
-                        : "Selecione um horário"
-                    } />
-                  </SelectTrigger>
-                  <SelectContent className="bg-barber-dark text-barber-light border-gray-700">
-                    {availableTimes.map(time => (
-                      <SelectItem key={time} value={time}>{time}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-barber-light">Observações</label>
-                <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Observações (opcional)"
-                  className="bg-barber-dark text-barber-light border-gray-700 min-h-24"
-                />
-              </div>
+    <div className="h-full pb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <Card className="bg-barber-blue border-gray-700 h-full">
+          <CardHeader>
+            <CardTitle className="text-barber-gold">Escolha a Data</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg overflow-hidden bg-barber-dark p-1">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                disabled={isDateDisabled}
+                className="text-barber-light pointer-events-auto"
+              />
             </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-barber-gold hover:bg-amber-600 text-barber-dark mt-4"
-              disabled={isLoading || !selectedDate || !selectedTime || !selectedService || !clientName || !clientPhone}
-            >
-              {isLoading ? "Agendando..." : "Confirmar Agendamento"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-barber-blue border-gray-700 h-full">
+          <CardHeader>
+            <CardTitle className="text-barber-gold">Dados do Agendamento</CardTitle>
+          </CardHeader>
+          <CardContent className="h-full">
+            <form onSubmit={handleSubmit} className="space-y-4 flex flex-col h-full">
+              <ScrollArea className="flex-grow pr-2">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-barber-light">Nome do Cliente</label>
+                    <Input
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                      placeholder="Nome"
+                      className="bg-barber-dark text-barber-light border-gray-700"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-barber-light">Telefone</label>
+                    <Input
+                      value={clientPhone}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
+                      placeholder="(00) 00000-0000"
+                      maxLength={16}
+                      className="bg-barber-dark text-barber-light border-gray-700"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-barber-light">Serviço</label>
+                    <Select 
+                      value={selectedService} 
+                      onValueChange={setSelectedService}
+                    >
+                      <SelectTrigger className="bg-barber-dark text-barber-light border-gray-700">
+                        <SelectValue placeholder="Selecione um serviço" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-barber-dark text-barber-light border-gray-700">
+                        {services.map(service => (
+                          <SelectItem key={service.id} value={service.id}>{service.name} - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(service.price)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-barber-light">Horário</label>
+                    <Select 
+                      value={selectedTime} 
+                      onValueChange={setSelectedTime}
+                      disabled={!selectedService || !selectedDate || availableTimes.length === 0}
+                    >
+                      <SelectTrigger className="bg-barber-dark text-barber-light border-gray-700">
+                        <SelectValue placeholder={
+                          !selectedService
+                            ? "Selecione um serviço primeiro"
+                            : !selectedDate
+                            ? "Selecione uma data primeiro"
+                            : availableTimes.length === 0
+                            ? "Nenhum horário disponível"
+                            : "Selecione um horário"
+                        } />
+                      </SelectTrigger>
+                      <SelectContent className="bg-barber-dark text-barber-light border-gray-700">
+                        {availableTimes.map(time => (
+                          <SelectItem key={time} value={time}>{time}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-barber-light">Observações</label>
+                    <Textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Observações (opcional)"
+                      className="bg-barber-dark text-barber-light border-gray-700 min-h-24"
+                    />
+                  </div>
+                </div>
+              </ScrollArea>
+              
+              <Button 
+                type="submit" 
+                className="w-full bg-barber-gold hover:bg-amber-600 text-barber-dark mt-4 sticky bottom-0"
+                disabled={isLoading || !selectedDate || !selectedTime || !selectedService || !clientName || !clientPhone}
+              >
+                {isLoading ? "Agendando..." : "Confirmar Agendamento"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
