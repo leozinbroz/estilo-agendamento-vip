@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useBarberShop } from '@/contexts/BarberShopContext';
 import { useLocation, Link } from 'react-router-dom';
 import { 
@@ -25,6 +25,8 @@ export function Layout({ children }: LayoutProps) {
   const { config } = useBarberShop();
   const { toast } = useToast();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   // Atualizar estado isMobile quando a janela for redimensionada
   useEffect(() => {
@@ -54,6 +56,26 @@ export function Layout({ children }: LayoutProps) {
       setSidebarOpen(false);
     }
   }, [location.pathname, isMobile]);
+
+  // Fechar sidebar ao clicar fora dele
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        sidebarRef.current && 
+        !sidebarRef.current.contains(event.target as Node) &&
+        menuButtonRef.current && 
+        !menuButtonRef.current.contains(event.target as Node) &&
+        sidebarOpen
+      ) {
+        setSidebarOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [sidebarOpen]);
 
   // Navegação
   const navigationItems = [
@@ -96,6 +118,7 @@ export function Layout({ children }: LayoutProps) {
       
       {/* Sidebar */}
       <aside 
+        ref={sidebarRef}
         className={cn(
           "fixed lg:relative z-30 flex flex-col w-64 h-full transition-transform duration-300 ease-in-out bg-barber-blue border-r border-gray-700",
           sidebarOpen 
@@ -174,6 +197,7 @@ export function Layout({ children }: LayoutProps) {
         <header className="bg-barber-dark shadow-md z-10">
           <div className="px-4 py-3 flex justify-between items-center">
             <Button
+              ref={menuButtonRef}
               variant="ghost"
               size="icon"
               onClick={() => setSidebarOpen(!sidebarOpen)}
