@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useBarberShop } from '@/contexts/BarberShopContext';
 import { useLocation, Link } from 'react-router-dom';
@@ -9,7 +8,9 @@ import {
   Users, 
   Settings, 
   Clock,
-  X 
+  X,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -27,16 +28,14 @@ export function Layout({ children }: LayoutProps) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const [theme, setTheme] = useState('dark');
 
   // Atualizar estado isMobile quando a janela for redimensionada
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth >= 1024) {
-        // Não forçar o estado do sidebar em desktop, apenas definir inicialmente
-        if (sidebarOpen === undefined) {
+      if (window.innerWidth >= 768) {
           setSidebarOpen(true);
-        }
       } else {
         setSidebarOpen(false);
       }
@@ -77,6 +76,10 @@ export function Layout({ children }: LayoutProps) {
     };
   }, [sidebarOpen]);
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   // Navegação
   const navigationItems = [
     {
@@ -106,45 +109,63 @@ export function Layout({ children }: LayoutProps) {
     }
   ];
 
+  const currentPage = navigationItems.find(item => item.path === location.pathname)?.name || "Estilo Barbearia";
+
   return (
-    <div className="flex h-screen overflow-hidden bg-barber-dark">
-      {/* Overlay escuro quando o menu está aberto em dispositivos móveis */}
-      {isMobile && sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-20"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+    <div className="h-screen w-screen bg-barber-dark">
+      {/* Header fixo no topo, sempre 100% da largura */}
+      <header className={cn(
+        "fixed top-0 left-0 w-full h-16 bg-barber-dark shadow-md z-40 flex items-center transition-all duration-300 ease-in-out",
+        !isMobile && sidebarOpen ? "lg:ml-64" : ""
+      )} style={{ minWidth: 0 }}>
+        <div className="px-4 w-full flex justify-between items-center h-16">
+          <div className="flex items-center gap-3 h-16">
+            {/* Botão de menu só no mobile */}
+            {isMobile && (
+              <Button
+                ref={menuButtonRef}
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className="text-barber-light flex items-center justify-center h-10 w-10 bg-barber-blue/80 rounded-lg hover:bg-barber-gold/80 transition-colors"
+                style={{ marginTop: 0, marginBottom: 0 }}
+              >
+                <Menu className="h-6 w-6" />
+              </Button>
+            )}
+            <h1 className="text-xl font-semibold text-barber-gold flex items-center gap-2">
+              {currentPage}
+              <span className="text-barber-light text-sm font-normal align-middle relative top-[2px]">/ {config.name}</span>
+            </h1>
+          </div>
+        </div>
+      </header>
       
       {/* Sidebar */}
-      <aside 
+      <aside
         ref={sidebarRef}
         className={cn(
-          "fixed lg:relative z-30 flex flex-col w-64 h-full transition-transform duration-300 ease-in-out bg-barber-blue border-r border-gray-700",
+          "fixed top-0 left-0 z-50 flex flex-col w-64 h-full transition-transform duration-300 ease-in-out bg-barber-blue border-r border-gray-700",
           sidebarOpen 
-            ? "transform translate-x-0" 
-            : "transform -translate-x-full lg:translate-x-full"
+            ? "translate-x-0"
+            : "-translate-x-full lg:translate-x-0"
         )}
+        style={{ marginTop: 0 }}
       >
         {/* Cabeçalho da Sidebar */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
-          {sidebarOpen ? (
-            <h1 className="text-barber-gold font-bold text-lg truncate">
-              {config.name}
-            </h1>
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-barber-gold flex items-center justify-center text-barber-dark font-bold">
-              {config.name.charAt(0)}
-            </div>
+          <h1 className="text-barber-gold font-bold text-lg truncate">
+            {config.name}
+          </h1>
+          {isMobile && (
+            <button
+              onClick={toggleSidebar}
+              className="text-gray-400 hover:text-white"
+            >
+              <X size={20} />
+            </button>
           )}
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="text-gray-400 hover:text-white"
-          >
-            <X size={20} />
-          </button>
         </div>
-
         {/* Links de navegação */}
         <nav className="flex-1 overflow-y-auto py-4">
           <ul className="space-y-2 px-2">
@@ -156,18 +177,16 @@ export function Layout({ children }: LayoutProps) {
                     "flex items-center p-2 rounded-lg",
                     location.pathname === item.path
                       ? "bg-barber-gold text-barber-dark font-medium"
-                      : "text-barber-light hover:bg-gray-700",
-                    !sidebarOpen && "justify-center"
+                      : "text-barber-light hover:bg-gray-700"
                   )}
                 >
                   {item.icon}
-                  {sidebarOpen && <span className="ml-3">{item.name}</span>}
+                  <span className="ml-3">{item.name}</span>
                 </Link>
               </li>
             ))}
           </ul>
         </nav>
-
         {/* Rodapé da sidebar */}
         {sidebarOpen && (
           <div className="p-4 border-t border-gray-700">
@@ -191,28 +210,23 @@ export function Layout({ children }: LayoutProps) {
         )}
       </aside>
 
-      {/* Conteúdo principal */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Cabeçalho do conteúdo */}
-        <header className="bg-barber-dark shadow-md z-10">
-          <div className="px-4 py-3 flex justify-between items-center">
-            <Button
-              ref={menuButtonRef}
-              variant="ghost"
-              size="icon"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-barber-light"
-            >
-              <Menu className="h-6 w-6" />
-            </Button>
-            <h1 className="text-barber-gold text-lg font-semibold">
-              {navigationItems.find(item => item.path === location.pathname)?.name || "Estilo Barbearia"}
-            </h1>
-            <div className="w-6"></div>
-          </div>
-        </header>
+      {/* Overlay escuro quando o menu está aberto em dispositivos móveis */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={toggleSidebar}
+        />
+      )}
 
-        {/* Área de conteúdo principal com rolagem */}
+      {/* Conteúdo principal */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-in-out",
+          "pt-16",
+          sidebarOpen && !isMobile ? "lg:ml-64" : ""
+        )}
+        style={{ minHeight: '100vh' }}
+      >
         <main className="flex-1 overflow-y-auto bg-barber-dark p-4">
           {children}
         </main>

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useBarberShop } from '@/contexts/BarberShopContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,12 +43,12 @@ const Clients = () => {
     
     let mostUsedServiceId = '';
     let maxCount = 0;
-    for (const [id, count] of Object.entries(serviceCount)) {
+    Object.entries(serviceCount).forEach(([id, count]) => {
       if (count > maxCount) {
         mostUsedServiceId = id;
         maxCount = count;
       }
-    }
+    });
     
     const mostUsedService = services.find(s => s.id === mostUsedServiceId);
     

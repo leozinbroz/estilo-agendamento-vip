@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBarberShop, Service, BarberShopConfig } from '@/contexts/BarberShopContext';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { X, Plus, Pencil, Clock } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,8 +58,29 @@ const Settings = () => {
   
   // Estado para a configuração da barbearia
   const [barberConfig, setBarberConfig] = useState<BarberShopConfig>({
-    ...config
+    name: config.name || '',
+    address: config.address || '',
+    city: config.city || '',
+    whatsapp: config.whatsapp || '',
+    workingHours: {
+      start: config.workingHours.start || '09:00',
+      end: config.workingHours.end || '19:00'
+    }
   });
+  
+  // Atualizar o estado local quando as configurações mudarem
+  useEffect(() => {
+    setBarberConfig({
+      name: config.name || '',
+      address: config.address || '',
+      city: config.city || '',
+      whatsapp: config.whatsapp || '',
+      workingHours: {
+        start: config.workingHours.start || '09:00',
+        end: config.workingHours.end || '19:00'
+      }
+    });
+  }, [config]);
   
   // Estado para edição/adição de serviço
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -107,7 +128,7 @@ const Settings = () => {
   };
   
   // Adicionar novo serviço
-  const handleAddService = () => {
+  const handleAddService = async () => {
     if (!newService.name || newService.price <= 0 || newService.duration <= 0) {
       toast({
         title: "Dados inválidos",
@@ -117,17 +138,45 @@ const Settings = () => {
       return;
     }
     
-    addService(newService);
-    setNewService({
-      name: '',
-      price: 0,
-      duration: 30
-    });
-    
-    toast({
-      title: "Serviço adicionado",
-      description: `O serviço ${newService.name} foi adicionado com sucesso.`
-    });
+    try {
+      // Insere no Supabase
+      const { data, error } = await supabase
+        .from('servicos')
+        .insert([
+          {
+            nome: newService.name,
+            preco: newService.price,
+            duracao: newService.duration,
+            created_at: new Date().toISOString()
+          }
+        ])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Atualiza o contexto local
+      addService(newService)
+      
+      // Limpa o formulário
+      setNewService({
+        name: '',
+        price: 0,
+        duration: 30
+      });
+      
+      toast({
+        title: "Serviço adicionado",
+        description: `O serviço ${newService.name} foi adicionado com sucesso.`
+      });
+    } catch (error) {
+      console.error('Erro ao adicionar serviço:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o serviço. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Atualizar serviço existente
@@ -261,7 +310,7 @@ const Settings = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-barber-light text-sm">Horário de Encerramento</label>
+                    <label className="text-barber-light text-sm">H. de Encerramento</label>
                     <Select 
                       value={barberConfig.workingHours.end}
                       onValueChange={(value) => updateConfigField('workingHours.end', value)}
