@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useBarberShop } from '@/contexts/BarberShopContext';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar } from '@/components/ui/calendar';
@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ptBR } from 'date-fns/locale';
+import { User, Phone, Scissors, MessageCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 const Schedule = () => {
   const { 
@@ -36,6 +38,10 @@ const Schedule = () => {
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isServiceSelectOpen, setIsServiceSelectOpen] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
+  const [notesModalOpen, setNotesModalOpen] = useState(false);
+
+  const notesRef = useRef<HTMLTextAreaElement>(null);
 
   // Monitorar estado do botão
   useEffect(() => {
@@ -229,23 +235,30 @@ const Schedule = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <Input
-                value={clientName || ''}
-                onChange={(e) => setClientName(e.target.value)}
-                placeholder="Nome do Cliente"
-                className="bg-barber-dark text-barber-light border-gray-700"
-              />
-              <Input
-                value={clientPhone}
-                onChange={(e) => handlePhoneChange(e.target.value)}
-                placeholder="Telefone (00) 00000-0000"
-                maxLength={16}
-                className="bg-barber-dark text-barber-light border-gray-700"
-              />
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-barber-gold w-5 h-5" />
+                <Input
+                  value={clientName || ''}
+                  onChange={(e) => setClientName(e.target.value)}
+                  placeholder="Nome do Cliente"
+                  className="bg-barber-dark text-barber-light border-gray-700 pl-10"
+                />
+              </div>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-barber-gold w-5 h-5" />
+                <Input
+                  value={clientPhone}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  placeholder="Telefone (00) 00000-0000"
+                  maxLength={16}
+                  className="bg-barber-dark text-barber-light border-gray-700 pl-10"
+                />
+              </div>
               
               <div className="relative">
+                <Scissors className="absolute left-3 top-1/2 -translate-y-1/2 text-barber-gold w-5 h-5 z-10" />
                 <div 
-                  className="bg-barber-dark text-barber-light border border-gray-700 rounded-md p-2 cursor-pointer"
+                  className="bg-barber-dark text-barber-light border border-gray-700 rounded-md p-2 cursor-pointer pl-10 relative"
                   onClick={() => setIsServiceSelectOpen(!isServiceSelectOpen)}
                 >
                   {selectedService ? (
@@ -388,12 +401,33 @@ const Schedule = () => {
                   })()}
                 </SelectContent>
               </Select>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Observações (opcional)"
-                className="bg-barber-dark text-barber-light border-gray-700 min-h-24"
-              />
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  className="text-barber-light text-xs opacity-70 hover:opacity-100 hover:text-barber-gold transition-colors"
+                  onClick={() => setNotesModalOpen(true)}
+                >
+                  Adicionar Observação (opcional)
+                </button>
+              </div>
+              <Dialog open={notesModalOpen} onOpenChange={setNotesModalOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Adicionar Observação</DialogTitle>
+                  </DialogHeader>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Digite sua observação aqui..."
+                    className="bg-barber-dark text-barber-light border-gray-700 min-h-24"
+                  />
+                  <DialogFooter>
+                    <Button type="button" onClick={() => setNotesModalOpen(false)}>
+                      Salvar
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
               <Button 
                 type="submit" 
                 className="w-full bg-barber-gold hover:bg-amber-600 text-barber-dark"

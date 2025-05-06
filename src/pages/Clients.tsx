@@ -3,10 +3,15 @@ import { useBarberShop } from '@/contexts/BarberShopContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Trash2, User } from 'lucide-react';
+import { deletarCliente } from '@/examples/supabaseExample';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 const Clients = () => {
   const { clients, appointments, services } = useBarberShop();
   const [searchQuery, setSearchQuery] = useState('');
+  const [clientToDelete, setClientToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Filtrar clientes com base na pesquisa
   const filteredClients = clients.filter(client => {
@@ -72,6 +77,15 @@ const Clients = () => {
     window.open(`https://wa.me/${formattedPhone}`, '_blank');
   };
 
+  // Função para deletar cliente
+  const handleDeleteClient = async (client) => {
+    setDeleting(true);
+    await deletarCliente(Number(client.id));
+    setDeleting(false);
+    setClientToDelete(null);
+    window.location.reload(); // Força atualização da lista (pode ser melhorado para atualizar o estado local)
+  };
+
   return (
     <div className="space-y-4">
       <Card className="bg-barber-blue border-gray-700">
@@ -103,8 +117,10 @@ const Clients = () => {
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <h3 className="font-medium text-barber-light">{client.name}</h3>
-                        <p className="text-sm text-barber-light">{client.phone}</p>
+                        <h3 className="font-medium text-barber-light flex items-center gap-2">
+                          <User className="w-4 h-4 text-barber-gold" />
+                          {client.name}
+                        </h3>
                         
                         <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-barber-light">
                           <dt className="opacity-70">Visitas:</dt>
@@ -125,14 +141,24 @@ const Clients = () => {
                         </dl>
                       </div>
                       
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => sendWhatsApp(client.phone)}
-                        className="text-green-500 border-green-500 hover:bg-green-500/20"
-                      >
-                        WhatsApp
-                      </Button>
+                      <div className="flex flex-col gap-2 items-end">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => sendWhatsApp(client.phone)}
+                          className="text-green-500 border-green-500 hover:bg-green-500/20"
+                        >
+                          WhatsApp
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="destructive"
+                          onClick={() => setClientToDelete(client)}
+                          className="border-red-500 hover:bg-red-500/20"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -141,6 +167,20 @@ const Clients = () => {
           </div>
         </CardContent>
       </Card>
+      <Dialog open={!!clientToDelete} onOpenChange={() => setClientToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir Cliente</DialogTitle>
+          </DialogHeader>
+          <p>Tem certeza que deseja excluir o cliente <b>{clientToDelete?.name}</b>? Esta ação não pode ser desfeita.</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClientToDelete(null)} disabled={deleting}>Cancelar</Button>
+            <Button variant="destructive" onClick={() => handleDeleteClient(clientToDelete)} disabled={deleting}>
+              {deleting ? 'Excluindo...' : 'Excluir'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
