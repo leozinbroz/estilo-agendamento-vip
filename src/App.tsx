@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BarberShopProvider } from '@/contexts/BarberShopContext';
 import { Layout } from '@/components/Layout';
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import Dashboard from "./pages/Dashboard";
 import Schedule from "./pages/Schedule";
 import ScheduledClients from "./pages/ScheduledClients";
@@ -22,6 +23,7 @@ const App = () => (
       <BarberShopProvider>
         <Toaster />
         <Sonner />
+        <SpeedInsights />
         <BrowserRouter>
           <Layout>
             <Routes>

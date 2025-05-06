@@ -153,7 +153,8 @@ const Schedule = () => {
       await addAppointment({
         clientId: client.id,
         serviceId: selectedService,
-        date: appointmentDate
+        date: appointmentDate,
+        status: 'pendente'
       });
       
       toast({
@@ -401,33 +402,6 @@ const Schedule = () => {
                   })()}
                 </SelectContent>
               </Select>
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  className="text-barber-light text-xs opacity-70 hover:opacity-100 hover:text-barber-gold transition-colors"
-                  onClick={() => setNotesModalOpen(true)}
-                >
-                  Adicionar Observação (opcional)
-                </button>
-              </div>
-              <Dialog open={notesModalOpen} onOpenChange={setNotesModalOpen}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Adicionar Observação</DialogTitle>
-                  </DialogHeader>
-                  <Textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Digite sua observação aqui..."
-                    className="bg-barber-dark text-barber-light border-gray-700 min-h-24"
-                  />
-                  <DialogFooter>
-                    <Button type="button" onClick={() => setNotesModalOpen(false)}>
-                      Salvar
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
               <Button 
                 type="submit" 
                 className="w-full bg-barber-gold hover:bg-amber-600 text-barber-dark"
