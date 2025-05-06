@@ -133,9 +133,9 @@ export function Layout({ children }: LayoutProps) {
                 <Menu className="h-6 w-6" />
               </Button>
             )}
-            <h1 className="text-xl font-semibold text-barber-gold flex items-center gap-2 whitespace-nowrap overflow-hidden">
-              <span className="truncate">{currentPage}</span>
-              <span className="text-barber-light text-sm font-normal flex-shrink-0">/ {config.name}</span>
+            <h1 className="text-xl font-semibold text-barber-gold flex flex-nowrap items-center gap-2 min-w-0 w-full">
+              <span className="truncate max-w-[50%]">{currentPage}</span>
+              <span className="text-barber-light text-sm font-normal truncate max-w-[50%] flex-shrink-0">/ {config.name}</span>
             </h1>
           </div>
         </div>
