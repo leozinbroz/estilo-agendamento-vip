@@ -425,7 +425,25 @@ Agradecemos a confirmação!`;
                 const phone = client.phone.replace(/\D/g, '');
                 const url = `https://api.callmebot.com/whatsapp.php?phone=55${phone}&text=${encodeURIComponent(message)}&apikey=7299717`;
                 
-                window.open(url, '_blank');
+                fetch(url)
+                  .then(response => {
+                    if (response.ok) {
+                      toast({
+                        title: "Notificação enviada",
+                        description: "A mensagem foi enviada com sucesso!",
+                      });
+                    } else {
+                      throw new Error('Erro ao enviar mensagem');
+                    }
+                  })
+                  .catch(error => {
+                    console.error('Erro ao enviar mensagem:', error);
+                    toast({
+                      title: "Erro ao enviar",
+                      description: "Não foi possível enviar a mensagem. Tente novamente.",
+                      variant: "destructive"
+                    });
+                  });
               }}
               className="text-barber-gold border-barber-gold hover:bg-barber-gold/20"
             >
