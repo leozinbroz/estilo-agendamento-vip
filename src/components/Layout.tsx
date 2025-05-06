@@ -133,9 +133,9 @@ export function Layout({ children }: LayoutProps) {
                 <Menu className="h-6 w-6" />
               </Button>
             )}
-            <h1 className="text-xl font-semibold text-barber-gold flex items-center gap-2">
-              {currentPage}
-              <span className="text-barber-light text-sm font-normal align-middle relative top-[2px]">/ {config.name}</span>
+            <h1 className="text-xl font-semibold text-barber-gold flex items-center gap-2 whitespace-nowrap overflow-hidden">
+              <span className="truncate">{currentPage}</span>
+              <span className="text-barber-light text-sm font-normal flex-shrink-0">/ {config.name}</span>
             </h1>
           </div>
         </div>
