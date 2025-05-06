@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useBarberShop } from '@/contexts/BarberShopContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CalendarIcon, UsersIcon, ClockIcon, ArrowUpIcon } from 'lucide-react';
+import { CalendarIcon, UsersIcon, DollarSignIcon, ScissorsIcon } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from 'recharts';
@@ -21,50 +21,9 @@ const Dashboard = () => {
   const [metrics, setMetrics] = useState({
     todayAppointments: 0,
     totalClients: 0,
-    nextAppointment: '',
-    mostBookedService: '',
     averageTicket: 0,
     totalServices: 0,
-  });
-
-  // Placeholders para os dados dos gráficos
-  const agendamentosPorDia = [
-    { dia: 'Seg', agendamentos: 0 },
-    { dia: 'Ter', agendamentos: 0 },
-    { dia: 'Qua', agendamentos: 0 },
-    { dia: 'Qui', agendamentos: 0 },
-    { dia: 'Sex', agendamentos: 0 },
-    { dia: 'Sáb', agendamentos: 0 },
-    { dia: 'Dom', agendamentos: 0 },
-  ];
-  const faturamentoMes = 0;
-  const faturamentoMesAnterior = 0;
-  const ticketMedio = 0;
-  const clientesFrequentes = [
-    { nome: 'Cliente 1', agendamentos: 0 },
-    { nome: 'Cliente 2', agendamentos: 0 },
-  ];
-  const servicosPopulares = [
-    { name: 'Corte', value: 0 },
-    { name: 'Barba', value: 0 },
-  ];
-  const horariosPopulares = [
-    { horario: '09:00', agendamentos: 0 },
-    { horario: '10:00', agendamentos: 0 },
-  ];
-
-  // Calcular valor total previsto hoje (fora do useEffect)
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayAppointments = appointments.filter(app => {
-    const appDate = new Date(app.date);
-    appDate.setHours(0, 0, 0, 0);
-    return appDate.getTime() === today.getTime();
-  });
-  let valorTotalPrevistoHoje = 0;
-  todayAppointments.forEach(app => {
-    const service = services.find(s => s.id === app.serviceId);
-    if (service) valorTotalPrevistoHoje += service.price;
+    valorTotalPrevisto: 0,
   });
 
   // Filtro de período
@@ -99,42 +58,12 @@ const Dashboard = () => {
       return appDate.getTime() === today.getTime();
     });
 
-    // Encontrar próximo agendamento
-    const currentTime = new Date();
-    const upcomingAppts = appointments.filter(app => new Date(app.date) > currentTime)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
-    let nextApptStr = 'Nenhum agendamento';
-    if (upcomingAppts.length > 0) {
-      const nextAppt = upcomingAppts[0];
-      const nextDate = new Date(nextAppt.date);
-      nextApptStr = nextDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      
-      // Se não for hoje, adicionar data
-      const nextApptDay = new Date(nextAppt.date);
-      nextApptDay.setHours(0, 0, 0, 0);
-      if (nextApptDay.getTime() !== today.getTime()) {
-        nextApptStr += ` - ${nextDate.toLocaleDateString('pt-BR')}`;
-      }
-    }
-
-    // Contagem de serviços
-    const serviceCounts: Record<string, number> = {};
-    appointments.forEach(app => {
-      serviceCounts[app.serviceId] = (serviceCounts[app.serviceId] || 0) + 1;
+    // Calcular valor total previsto hoje
+    let valorTotalPrevisto = 0;
+    todayAppts.forEach(app => {
+      const service = services.find(s => s.id === app.serviceId);
+      if (service) valorTotalPrevisto += service.price;
     });
-
-    // Serviço mais agendado
-    let mostBookedId = '';
-    let maxCount = 0;
-    for (const [id, count] of Object.entries(serviceCounts)) {
-      if (count > maxCount) {
-        mostBookedId = id;
-        maxCount = count;
-      }
-    }
-
-    const mostBookedService = services.find(s => s.id === mostBookedId)?.name || 'Nenhum';
 
     // Calcular ticket médio
     let totalValue = 0;
@@ -149,12 +78,68 @@ const Dashboard = () => {
     setMetrics({
       todayAppointments: todayAppts.length,
       totalClients: clients.length,
-      nextAppointment: nextApptStr,
-      mostBookedService,
       averageTicket,
       totalServices: services.length,
+      valorTotalPrevisto,
     });
   }, [appointments, services, clients]);
+
+  // Função para calcular faturamento do mês
+  const calcularFaturamentoMes = (month: number, year: number) => {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+    
+    return appointments
+      .filter(app => {
+        const appDate = new Date(app.date);
+        return appDate >= startDate && appDate <= endDate;
+      })
+      .reduce((total, app) => {
+        const service = services.find(s => s.id === app.serviceId);
+        return total + (service?.price || 0);
+      }, 0);
+  };
+
+  // Função para calcular agendamentos por dia da semana
+  const calcularAgendamentosPorDia = () => {
+    const dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const agendamentosPorDia = dias.map(dia => ({ dia, agendamentos: 0 }));
+
+    appointments.forEach(app => {
+      const appDate = new Date(app.date);
+      const diaSemana = appDate.getDay();
+      agendamentosPorDia[diaSemana].agendamentos++;
+    });
+
+    return agendamentosPorDia;
+  };
+
+  // Função para calcular serviços mais populares
+  const calcularServicosPopulares = () => {
+    const servicosCount = services.map(service => ({
+      name: service.name,
+      value: appointments.filter(app => app.serviceId === service.id).length
+    }));
+
+    return servicosCount.sort((a, b) => b.value - a.value);
+  };
+
+  // Função para calcular horários mais procurados
+  const calcularHorariosPopulares = () => {
+    const horarios: Record<string, number> = {};
+    
+    appointments.forEach(app => {
+      const hora = new Date(app.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      horarios[hora] = (horarios[hora] || 0) + 1;
+    });
+
+    return Object.entries(horarios)
+      .map(([horario, agendamentos]) => ({ horario, agendamentos }))
+      .sort((a, b) => b.agendamentos - a.agendamentos)
+      .slice(0, 5);
+  };
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
   return (
     <Tabs defaultValue="overview" className="w-full">
@@ -169,107 +154,6 @@ const Dashboard = () => {
       <TabsContent value="overview">
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Agendamentos Hoje */}
-            <Card className="bg-barber-blue text-barber-light border-gray-700">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-barber-light flex items-center">
-                  <CalendarIcon className="mr-2 h-4 w-4 text-barber-gold" />
-                  Agendamentos Hoje
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{metrics.todayAppointments}</div>
-              </CardContent>
-            </Card>
-            {/* Próximo Horário */}
-            <Card className="bg-barber-blue text-barber-light border-gray-700">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-barber-light flex items-center">
-                  <ClockIcon className="mr-2 h-4 w-4 text-barber-gold" />
-                  Próximo Horário
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{metrics.nextAppointment}</div>
-              </CardContent>
-            </Card>
-            {/* Valor Total Previsto Hoje */}
-            <Card className="bg-barber-blue text-barber-light border-gray-700">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-barber-light flex items-center">
-                  <CalendarIcon className="mr-2 h-4 w-4 text-barber-gold" />
-                  Valor Total Previsto Hoje
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(valorTotalPrevistoHoje)}</div>
-              </CardContent>
-            </Card>
-            {/* Ticket Médio */}
-            <Card className="bg-barber-blue text-barber-light border-gray-700">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-barber-light flex items-center">
-                  <CalendarIcon className="mr-2 h-4 w-4 text-barber-gold" />
-                  Ticket Médio
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(metrics.averageTicket)}</div>
-              </CardContent>
-            </Card>
-            {/* Total de Serviços Oferecidos */}
-            <Card className="bg-barber-blue text-barber-light border-gray-700">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-barber-light flex items-center">
-                  <CalendarIcon className="mr-2 h-4 w-4 text-barber-gold" />
-                  Total de Serviços Oferecidos
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{metrics.totalServices}</div>
-              </CardContent>
-            </Card>
-            {/* Serviço Mais Agendado */}
-            <Card className="bg-barber-blue text-barber-light border-gray-700">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-barber-light flex items-center">
-                  <ArrowUpIcon className="mr-2 h-4 w-4 text-barber-gold" />
-                  Serviço Mais Agendado
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold truncate">{metrics.mostBookedService}</div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </TabsContent>
-      <TabsContent value="reports">
-        <div className="space-y-6">
-          {/* Filtros de período */}
-          <div className="flex flex-col sm:flex-row gap-2 mb-4">
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="bg-barber-blue text-barber-light border-gray-700 w-full sm:w-40">
-                <SelectValue placeholder="Mês" />
-              </SelectTrigger>
-              <SelectContent className="bg-barber-blue text-barber-light border-gray-700">
-                {meses.map(m => (
-                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="bg-barber-blue text-barber-light border-gray-700 w-full sm:w-32">
-                <SelectValue placeholder="Ano" />
-              </SelectTrigger>
-              <SelectContent className="bg-barber-blue text-barber-light border-gray-700">
-                {anos.map(a => (
-                  <SelectItem key={a} value={a}>{a}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Total de Clientes */}
             <Card className="bg-barber-blue text-barber-light border-gray-700">
               <CardHeader className="pb-2">
@@ -282,91 +166,210 @@ const Dashboard = () => {
                 <div className="text-2xl font-bold">{metrics.totalClients}</div>
               </CardContent>
             </Card>
+
+            {/* Agendamentos Hoje */}
+            <Card className="bg-barber-blue text-barber-light border-gray-700">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-barber-light flex items-center">
+                  <CalendarIcon className="mr-2 h-4 w-4 text-barber-gold" />
+                  Agendamentos Hoje
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.todayAppointments}</div>
+              </CardContent>
+            </Card>
+
+            {/* Valor Total Previsto */}
+            <Card className="bg-barber-blue text-barber-light border-gray-700">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-barber-light flex items-center">
+                  <DollarSignIcon className="mr-2 h-4 w-4 text-barber-gold" />
+                  Valor Total Previsto
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(metrics.valorTotalPrevisto)}</div>
+              </CardContent>
+            </Card>
+
+            {/* Ticket Médio */}
+            <Card className="bg-barber-blue text-barber-light border-gray-700">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-barber-light flex items-center">
+                  <DollarSignIcon className="mr-2 h-4 w-4 text-barber-gold" />
+                  Ticket Médio
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(metrics.averageTicket)}</div>
+              </CardContent>
+            </Card>
+
+            {/* Total de Serviços */}
+            <Card className="bg-barber-blue text-barber-light border-gray-700">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-barber-light flex items-center">
+                  <ScissorsIcon className="mr-2 h-4 w-4 text-barber-gold" />
+                  Total de Serviços
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.totalServices}</div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </TabsContent>
+      <TabsContent value="reports">
+        <div className="space-y-6">
+          {/* Filtros de período */}
+          <div className="flex flex-col sm:flex-row gap-2 mb-4">
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-[180px] bg-barber-dark text-barber-light border-gray-700">
+                <SelectValue placeholder="Selecione o mês" />
+              </SelectTrigger>
+              <SelectContent className="bg-barber-dark text-barber-light border-gray-700">
+                {meses.map(mes => (
+                  <SelectItem key={mes.value} value={mes.value} className="text-barber-light">
+                    {mes.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-[180px] bg-barber-dark text-barber-light border-gray-700">
+                <SelectValue placeholder="Selecione o ano" />
+              </SelectTrigger>
+              <SelectContent className="bg-barber-dark text-barber-light border-gray-700">
+                {anos.map(ano => (
+                  <SelectItem key={ano} value={ano} className="text-barber-light">
+                    {ano}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Faturamento do Mês */}
-            <Card className="bg-barber-blue border-gray-700">
+            <Card className="bg-barber-blue text-barber-light border-gray-700">
               <CardHeader>
-                <CardTitle className="text-barber-gold">Faturamento do Mês</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Faturamento de {meses[parseInt(selectedMonth) - 1].label}/{selectedYear}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">R$ {faturamentoMes.toLocaleString('pt-BR')}</div>
+                <div className="text-2xl font-bold">
+                  {formatCurrency(calcularFaturamentoMes(parseInt(selectedMonth), parseInt(selectedYear)))}
+                </div>
               </CardContent>
             </Card>
-            {/* Faturamento Mês Anterior */}
-            <Card className="bg-barber-blue border-gray-700">
+
+            {/* Faturamento do Mês Anterior */}
+            <Card className="bg-barber-blue text-barber-light border-gray-700">
               <CardHeader>
-                <CardTitle className="text-barber-gold">Faturamento Mês Anterior</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Faturamento de {meses[parseInt(selectedMonth) - 2 < 0 ? 11 : parseInt(selectedMonth) - 2].label}/{parseInt(selectedMonth) === 1 ? parseInt(selectedYear) - 1 : selectedYear}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">R$ {faturamentoMesAnterior.toLocaleString('pt-BR')}</div>
+                <div className="text-2xl font-bold">
+                  {formatCurrency(calcularFaturamentoMes(
+                    parseInt(selectedMonth) === 1 ? 12 : parseInt(selectedMonth) - 1,
+                    parseInt(selectedMonth) === 1 ? parseInt(selectedYear) - 1 : parseInt(selectedYear)
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </div>
-          {/* Gráficos responsivos com rolagem horizontal no mobile */}
-          <div className="space-y-6">
-            {/* Gráfico de Agendamentos por Dia da Semana */}
-            <Card className="bg-barber-blue border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-barber-gold">Agendamentos por Dia da Semana</CardTitle>
-              </CardHeader>
-              <div className="overflow-x-auto w-full">
-                <div className="min-w-[500px] max-w-full">
-                  <CardContent style={{ height: 300 }}>
-                    <ResponsiveContainer width={500} height={300}>
-                      <BarChart data={agendamentosPorDia}>
-                        <XAxis dataKey="dia" stroke="#FFD700" />
-                        <YAxis stroke="#fff" />
-                        <Tooltip />
-                        <Bar dataKey="agendamentos" fill="#FFD700" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </div>
+
+          {/* Agendamentos por Dia da Semana */}
+          <Card className="bg-barber-blue text-barber-light border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Agendamentos por Dia da Semana</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={calcularAgendamentosPorDia()}>
+                    <XAxis dataKey="dia" stroke="#E5E7EB" />
+                    <YAxis stroke="#E5E7EB" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #374151',
+                        color: '#E5E7EB'
+                      }}
+                    />
+                    <Bar dataKey="agendamentos" fill="#FCD34D" />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-            </Card>
-            {/* Gráfico de Serviços Mais Populares */}
-            <Card className="bg-barber-blue border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-barber-gold">Serviços Mais Populares</CardTitle>
-              </CardHeader>
-              <div className="overflow-x-auto w-full">
-                <div className="min-w-[500px] max-w-full">
-                  <CardContent style={{ height: 300 }}>
-                    <ResponsiveContainer width={500} height={300}>
-                      <PieChart>
-                        <Pie data={servicosPopulares} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#FFD700">
-                          {servicosPopulares.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#FFD700' : '#333'} />
-                          ))}
-                        </Pie>
-                        <Legend />
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </div>
+            </CardContent>
+          </Card>
+
+          {/* Serviços Mais Populares */}
+          <Card className="bg-barber-blue text-barber-light border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Serviços Mais Populares</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={calcularServicosPopulares()}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                    >
+                      {calcularServicosPopulares().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #374151',
+                        color: '#E5E7EB'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-            </Card>
-            {/* Gráfico de Horários Mais Procurados */}
-            <Card className="bg-barber-blue border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-barber-gold">Horários Mais Procurados</CardTitle>
-              </CardHeader>
-              <div className="overflow-x-auto w-full">
-                <div className="min-w-[500px] max-w-full">
-                  <CardContent style={{ height: 300 }}>
-                    <ResponsiveContainer width={500} height={300}>
-                      <BarChart data={horariosPopulares}>
-                        <XAxis dataKey="horario" stroke="#FFD700" />
-                        <YAxis stroke="#fff" />
-                        <Tooltip />
-                        <Bar dataKey="agendamentos" fill="#FFD700" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </div>
+            </CardContent>
+          </Card>
+
+          {/* Horários Mais Procurados */}
+          <Card className="bg-barber-blue text-barber-light border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Horários Mais Procurados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={calcularHorariosPopulares()}>
+                    <XAxis dataKey="horario" stroke="#E5E7EB" />
+                    <YAxis stroke="#E5E7EB" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #374151',
+                        color: '#E5E7EB'
+                      }}
+                    />
+                    <Bar dataKey="agendamentos" fill="#FCD34D" />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-            </Card>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </TabsContent>
     </Tabs>
