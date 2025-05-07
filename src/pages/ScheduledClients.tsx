@@ -166,9 +166,9 @@ const ScheduledClients = () => {
       }
 
       console.log('Tentando enviar mensagem via API');
-      // Garantir que a URL da API seja HTTPS
-      const apiUrl = config.automation.apiUrl.replace('http://', 'https://');
-      const fullApiUrl = `${apiUrl}?recipient=${formattedPhone}&apikey=${config.automation.apiKey}&text=${encodeURIComponent(message)}`;
+      // Garantir que a URL da API seja HTTPS e construir a URL corretamente
+      const baseUrl = config.automation.apiUrl.replace('http://', 'https://');
+      const fullApiUrl = `${baseUrl}?recipient=${formattedPhone}&apikey=${config.automation.apiKey}&text=${encodeURIComponent(message)}`;
       
       console.log('URL da API:', fullApiUrl);
       console.log('Parâmetros:', {
