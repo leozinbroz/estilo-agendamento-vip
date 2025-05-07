@@ -178,14 +178,15 @@ const ScheduledClients = () => {
       });
       
       try {
-        const response = await fetch(fullApiUrl, {
+        // Usar um proxy CORS para contornar as restrições
+        const proxyUrl = `https://cors-anywhere.herokuapp.com/${fullApiUrl}`;
+        
+        const response = await fetch(proxyUrl, {
           method: 'GET',
           headers: {
             'Accept': '*/*',
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type'
+            'X-Requested-With': 'XMLHttpRequest'
           },
           mode: 'cors',
           credentials: 'omit',
