@@ -167,10 +167,10 @@ const ScheduledClients = () => {
 
       console.log('Tentando enviar mensagem via API');
       // Garantir que a URL da API seja HTTPS e construir a URL corretamente
-      const baseUrl = config.automation.apiUrl.replace('http://', 'https://');
-      const fullApiUrl = `${baseUrl}?recipient=${formattedPhone}&apikey=${config.automation.apiKey}&text=${encodeURIComponent(message)}`;
+      // Agora usando o endpoint serverless local
+      const localApiUrl = `/api/send-whatsapp?recipient=${formattedPhone}&apikey=${config.automation.apiKey}&text=${encodeURIComponent(message)}`;
       
-      console.log('URL da API:', fullApiUrl);
+      console.log('URL da API (serverless):', localApiUrl);
       console.log('Parâmetros:', {
         recipient: formattedPhone,
         apikey: config.automation.apiKey,
@@ -178,18 +178,12 @@ const ScheduledClients = () => {
       });
       
       try {
-        // Usar um proxy CORS para contornar as restrições
-        const proxyUrl = `https://cors-anywhere.herokuapp.com/${fullApiUrl}`;
-        
-        const response = await fetch(proxyUrl, {
+        const response = await fetch(localApiUrl, {
           method: 'GET',
           headers: {
             'Accept': '*/*',
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'Content-Type': 'application/json'
           },
-          mode: 'cors',
-          credentials: 'omit',
           cache: 'no-cache'
         });
 
