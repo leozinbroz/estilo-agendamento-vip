@@ -166,10 +166,11 @@ const ScheduledClients = () => {
       }
 
       console.log('Tentando enviar mensagem via API');
-      // Enviar mensagem via API usando a URL e KEY configuradas
-      const apiUrl = `${config.automation.apiUrl}?recipient=${formattedPhone}&apikey=${config.automation.apiKey}&text=${encodeURIComponent(message)}`;
+      // Garantir que a URL da API seja HTTPS
+      const apiUrl = config.automation.apiUrl.replace('http://', 'https://');
+      const fullApiUrl = `${apiUrl}?recipient=${formattedPhone}&apikey=${config.automation.apiKey}&text=${encodeURIComponent(message)}`;
       
-      console.log('URL da API:', apiUrl);
+      console.log('URL da API:', fullApiUrl);
       console.log('Parâmetros:', {
         recipient: formattedPhone,
         apikey: config.automation.apiKey,
@@ -177,7 +178,7 @@ const ScheduledClients = () => {
       });
       
       try {
-        const response = await fetch(apiUrl, {
+        const response = await fetch(fullApiUrl, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
