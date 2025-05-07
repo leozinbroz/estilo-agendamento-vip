@@ -181,12 +181,14 @@ const ScheduledClients = () => {
         const response = await fetch(fullApiUrl, {
           method: 'GET',
           headers: {
-            'Accept': 'application/json',
+            'Accept': '*/*',
             'Content-Type': 'application/json',
-            'Origin': window.location.origin,
-            'Cache-Control': 'no-cache'
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type'
           },
           mode: 'cors',
+          credentials: 'omit',
           cache: 'no-cache'
         });
 
