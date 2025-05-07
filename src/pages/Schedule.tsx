@@ -329,7 +329,7 @@ const Schedule = () => {
                     if (!service) return null;
                     
                     // Gerar todos os horários possíveis
-                    const allTimes = generateTimeOptions(config.workingHours.start, config.workingHours.end);
+                    const allTimes = generateTimeOptions(config.openingTime, config.closingTime);
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
                     const isToday = selectedDate && new Date(selectedDate).setHours(0,0,0,0) === today.getTime();

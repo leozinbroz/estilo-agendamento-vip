@@ -64,9 +64,9 @@ const ScheduledClients = () => {
 
   // Gerar todas as opções de horário uma única vez
   useEffect(() => {
-    const options = generateTimeOptions(config.workingHours.start, config.workingHours.end);
+    const options = generateTimeOptions(config.openingTime, config.closingTime);
     setAllTimeOptions(options);
-  }, [config.workingHours.start, config.workingHours.end]);
+  }, [config.openingTime, config.closingTime]);
 
   // Atualizar horários disponíveis quando a data ou serviço mudam na edição
   useEffect(() => {
@@ -119,8 +119,13 @@ const ScheduledClients = () => {
     return new Date(appA.date).getTime() - new Date(appB.date).getTime();
   };
 
+  // Debug para verificar o config
+  useEffect(() => {
+    console.log('Config atual:', config);
+  }, [config]);
+
   // Enviar mensagem de WhatsApp
-  const sendWhatsApp = (appointment: any) => {
+  const sendWhatsApp = async (appointment: any) => {
     const client = clients.find(c => c.id === appointment.clientId);
     const service = services.find(s => s.id === appointment.serviceId);
     
@@ -133,17 +138,114 @@ const ScheduledClients = () => {
       minute: '2-digit' 
     });
     
-    // Formatar número de telefone para WhatsApp (remover caracteres não numéricos)
+    // Formatar número de telefone para WhatsApp (remover caracteres não numéricos e adicionar +55)
     const phone = client.phone.replace(/\D/g, '');
+    const formattedPhone = phone.startsWith('55') ? `+${phone}` : `+55${phone}`;
     
-    // Montar a mensagem
-    const message = `Olá ${client.name}, confirmando seu agendamento na ${config.name} para ${service.name} no dia ${formattedDate} às ${formattedTime}. Endereço: ${config.address}, ${config.city}. Até lá!`;
+    // Montar a mensagem usando o template padrão
+    const message = config.automation?.mensagemPadrao
+      ?.replace('{cliente}', client.name)
+      .replace('{barbearia}', config.name)
+      .replace('{data}', formattedDate)
+      .replace('{horario}', formattedTime)
+      .replace('{hora}', `*${formattedTime}*`)
+      .replace('{servico}', service.name)
+      .replace('{endereco}', `${config.address}, ${config.city}`);
     
-    // Montar URL do WhatsApp
-    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    
-    // Abrir WhatsApp em nova aba
-    window.open(whatsappUrl, '_blank');
+    try {
+      // Debug para verificar a automação
+      console.log('Configuração de automação:', config.automation);
+      
+      // Verificar se a automação está configurada
+      if (!config.automation?.enabled || !config.automation?.apiUrl || !config.automation?.apiKey) {
+        console.log('Automação não configurada, usando WhatsApp Web');
+        // Se não estiver configurada, abrir WhatsApp Web
+        const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+        return;
+      }
+
+      console.log('Tentando enviar mensagem via API');
+      // Enviar mensagem via API usando a URL e KEY configuradas
+      const apiUrl = `${config.automation.apiUrl}?recipient=${formattedPhone}&apikey=${config.automation.apiKey}&text=${encodeURIComponent(message)}`;
+      
+      console.log('URL da API:', apiUrl);
+      console.log('Parâmetros:', {
+        recipient: formattedPhone,
+        apikey: config.automation.apiKey,
+        text: message
+      });
+      
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Origin': window.location.origin,
+            'Cache-Control': 'no-cache'
+          },
+          mode: 'cors',
+          cache: 'no-cache'
+        });
+
+        console.log('Status da resposta:', response.status);
+        console.log('Headers da resposta:', Object.fromEntries(response.headers.entries()));
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Erro na resposta:', errorText);
+          throw new Error(`Erro na API: ${response.status} - ${errorText}`);
+        }
+
+        try {
+          const data = await response.json();
+          console.log('Resposta da API:', data);
+          
+          if (data.error) {
+            throw new Error(data.error);
+          }
+
+          toast({
+            title: "Mensagem enviada",
+            description: "A mensagem foi enviada com sucesso para o cliente."
+          });
+        } catch (jsonError) {
+          console.error('Erro ao processar resposta JSON:', jsonError);
+          // Se não conseguir processar o JSON, mas a resposta foi ok, consideramos sucesso
+          if (response.ok) {
+            toast({
+              title: "Mensagem enviada",
+              description: "A mensagem foi enviada com sucesso para o cliente."
+            });
+          } else {
+            throw jsonError;
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao enviar mensagem:', error);
+        toast({
+          title: "Erro ao enviar",
+          description: "Não foi possível enviar a mensagem. Tentando abrir WhatsApp Web...",
+          variant: "destructive"
+        });
+        
+        // Em caso de erro, tentar abrir WhatsApp Web
+        const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      toast({
+        title: "Erro ao enviar",
+        description: "Não foi possível enviar a mensagem. Tentando abrir WhatsApp Web...",
+        variant: "destructive"
+      });
+      
+      // Em caso de erro, tentar abrir WhatsApp Web
+      const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+    }
   };
 
   // Função para confirmar a exclusão de um agendamento

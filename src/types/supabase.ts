@@ -31,4 +31,17 @@ export type Agendamento = {
 export type AgendamentoCompleto = Agendamento & {
   clientes: Cliente
   servicos: Servico
+}
+
+export type Automacao = {
+  id: string
+  barbearia_id: string
+  enabled: boolean
+  api_url: string | null
+  api_key: string | null
+  whatsapp_number: string | null
+  lembrete_mensagem: string | null
+  lembrete_tempo: '2min' | '30min' | '1h' | '2h' | null
+  created_at: string
+  updated_at: string
 } 

@@ -18,6 +18,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 // Máscara para formato de telefone
 const formatPhoneNumber = (value: string) => {
@@ -58,26 +60,36 @@ const Settings = () => {
   
   // Estado para a configuração da barbearia
   const [barberConfig, setBarberConfig] = useState<BarberShopConfig>({
+    id: config.id || '',
     name: config.name || '',
     address: config.address || '',
     city: config.city || '',
     whatsapp: config.whatsapp || '',
-    workingHours: {
-      start: config.workingHours.start || '09:00',
-      end: config.workingHours.end || '19:00'
+    openingTime: config.openingTime || '09:00',
+    closingTime: config.closingTime || '19:00',
+    automation: {
+      enabled: config.automation?.enabled || false,
+      apiUrl: config.automation?.apiUrl || '',
+      apiKey: config.automation?.apiKey || '',
+      mensagemPadrao: config.automation?.mensagemPadrao || ''
     }
   });
   
   // Atualizar o estado local quando as configurações mudarem
   useEffect(() => {
     setBarberConfig({
+      id: config.id || '',
       name: config.name || '',
       address: config.address || '',
       city: config.city || '',
       whatsapp: config.whatsapp || '',
-      workingHours: {
-        start: config.workingHours.start || '09:00',
-        end: config.workingHours.end || '19:00'
+      openingTime: config.openingTime || '09:00',
+      closingTime: config.closingTime || '19:00',
+      automation: {
+        enabled: config.automation?.enabled || false,
+        apiUrl: config.automation?.apiUrl || '',
+        apiKey: config.automation?.apiKey || '',
+        mensagemPadrao: config.automation?.mensagemPadrao || ''
       }
     });
   }, [config]);
@@ -105,14 +117,10 @@ const Settings = () => {
   
   // Atualizar campo de configuração
   const updateConfigField = (field: string, value: string) => {
-    if (field === 'workingHours.start' || field === 'workingHours.end') {
-      const [main, sub] = field.split('.');
+    if (field === 'openingTime' || field === 'closingTime') {
       setBarberConfig({
         ...barberConfig,
-        [main]: {
-          ...barberConfig.workingHours,
-          [sub]: value
-        }
+        [field]: value
       });
     } else if (field === 'whatsapp') {
       setBarberConfig({
@@ -216,7 +224,7 @@ const Settings = () => {
   
   return (
     <Tabs defaultValue="general" className="w-full">
-      <TabsList className="grid grid-cols-2 bg-barber-blue">
+      <TabsList className="grid grid-cols-3 bg-barber-blue">
         <TabsTrigger 
           value="general" 
           className="text-barber-light data-[state=active]:text-barber-gold data-[state=active]:shadow-none"
@@ -228,6 +236,12 @@ const Settings = () => {
           className="text-barber-light data-[state=active]:text-barber-gold data-[state=active]:shadow-none"
         >
           Serviços
+        </TabsTrigger>
+        <TabsTrigger 
+          value="automation" 
+          className="text-barber-light data-[state=active]:text-barber-gold data-[state=active]:shadow-none"
+        >
+          Automação
         </TabsTrigger>
       </TabsList>
       
@@ -293,8 +307,8 @@ const Settings = () => {
                   <div className="space-y-2">
                     <label className="text-barber-light text-sm">Horário de Abertura</label>
                     <Select 
-                      value={barberConfig.workingHours.start}
-                      onValueChange={(value) => updateConfigField('workingHours.start', value)}
+                      value={barberConfig.openingTime}
+                      onValueChange={(value) => updateConfigField('openingTime', value)}
                     >
                       <SelectTrigger className="bg-barber-blue text-barber-light border-gray-700">
                         <SelectValue placeholder="Selecione..." />
@@ -312,8 +326,8 @@ const Settings = () => {
                   <div className="space-y-2">
                     <label className="text-barber-light text-sm">H. de Encerramento</label>
                     <Select 
-                      value={barberConfig.workingHours.end}
-                      onValueChange={(value) => updateConfigField('workingHours.end', value)}
+                      value={barberConfig.closingTime}
+                      onValueChange={(value) => updateConfigField('closingTime', value)}
                     >
                       <SelectTrigger className="bg-barber-blue text-barber-light border-gray-700">
                         <SelectValue placeholder="Selecione..." />
@@ -329,8 +343,8 @@ const Settings = () => {
                   </div>
                   
                   <div className="col-span-2 pt-1 text-center text-xs text-barber-gold">
-                    {barberConfig.workingHours.start && barberConfig.workingHours.end && (
-                      <p>A barbearia abrirá das {barberConfig.workingHours.start} às {barberConfig.workingHours.end}</p>
+                    {barberConfig.openingTime && barberConfig.closingTime && (
+                      <p>A barbearia abrirá das {barberConfig.openingTime} às {barberConfig.closingTime}</p>
                     )}
                   </div>
                 </div>
@@ -459,6 +473,139 @@ const Settings = () => {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="automation">
+        <Card className="bg-barber-blue border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-barber-gold">Configurações de Automação</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-barber-light">Status da Automação</label>
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    variant="outline" 
+                    className={`${barberConfig.automation?.enabled ? 'bg-barber-gold text-barber-dark' : 'bg-barber-dark text-barber-light'} border-gray-700 hover:bg-barber-gold/20`}
+                    onClick={() => {
+                      setBarberConfig({
+                        ...barberConfig,
+                        automation: {
+                          ...barberConfig.automation!,
+                          enabled: !barberConfig.automation?.enabled
+                        }
+                      });
+                    }}
+                  >
+                    {barberConfig.automation?.enabled ? 'Automação Ativada' : 'Ativar Automação'}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="bg-barber-dark p-3 rounded-lg border border-gray-700">
+                  <h3 className="font-medium text-barber-light mb-2">URL da Api</h3>
+                  <p className="text-sm text-barber-light mb-2">
+                    URL base da API
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      id="apiUrl"
+                      value={barberConfig.automation?.apiUrl || ''}
+                      onChange={(e) => {
+                        setBarberConfig({
+                          ...barberConfig,
+                          automation: {
+                            ...barberConfig.automation!,
+                            apiUrl: e.target.value
+                          }
+                        });
+                      }}
+                      placeholder="https://sua-api.com"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`${barberConfig.automation?.apiUrl}?recipient=5511999999999&apikey=${barberConfig.automation?.apiKey}&text=Teste de conexão`, {
+                            method: 'GET',
+                            headers: {
+                              'Accept': 'application/json',
+                              'Content-Type': 'application/json'
+                            }
+                          });
+                          
+                          if (!response.ok) {
+                            throw new Error(`Erro na API: ${response.status}`);
+                          }
+                          
+                          toast({
+                            title: "Conexão bem sucedida",
+                            description: "A API está funcionando corretamente."
+                          });
+                        } catch (error) {
+                          console.error('Erro ao testar API:', error);
+                          toast({
+                            title: "Erro na conexão",
+                            description: "Não foi possível conectar com a API. Verifique a URL e a chave.",
+                            variant: "destructive"
+                          });
+                        }
+                      }}
+                    >
+                      Testar
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="bg-barber-dark p-3 rounded-lg border border-gray-700">
+                  <h3 className="font-medium text-barber-light mb-2">KEY da Api</h3>
+                  <p className="text-sm text-barber-light mb-2">
+                    Sua chave de acesso à API
+                  </p>
+                  <Input
+                    id="apiKey"
+                    type="password"
+                    value={barberConfig.automation?.apiKey || ''}
+                    onChange={(e) => {
+                      setBarberConfig({
+                        ...barberConfig,
+                        automation: {
+                          ...barberConfig.automation!,
+                          apiKey: e.target.value
+                        }
+                      });
+                    }}
+                    placeholder="Sua chave da API"
+                  />
+                </div>
+              </div>
+              
+              <Button 
+                onClick={async () => {
+                  try {
+                    await updateConfig(barberConfig);
+                    toast({
+                      title: "Configurações salvas",
+                      description: "As configurações de automação foram atualizadas com sucesso."
+                    });
+                  } catch (error) {
+                    console.error('Erro ao salvar configurações:', error);
+                    toast({
+                      title: "Erro ao salvar",
+                      description: "Não foi possível salvar as configurações de automação.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+                className="w-full bg-barber-gold hover:bg-amber-600 text-barber-dark"
+              >
+                Salvar Configurações de Automação
+              </Button>
             </div>
           </CardContent>
         </Card>

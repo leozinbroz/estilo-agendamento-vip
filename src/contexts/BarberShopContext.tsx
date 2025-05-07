@@ -26,13 +26,18 @@ export interface Appointment {
 }
 
 export interface BarberShopConfig {
+  id: string;
   name: string;
   address: string;
   city: string;
   whatsapp: string;
-  workingHours: {
-    start: string; // formato "09:00"
-    end: string; // formato "19:00"
+  openingTime: string;
+  closingTime: string;
+  automation?: {
+    enabled: boolean;
+    apiUrl: string;
+    apiKey: string;
+    mensagemPadrao: string;
   };
 }
 
@@ -55,13 +60,18 @@ interface BarberShopContextType {
 
 // Valores padrão para o contexto
 const defaultConfig: BarberShopConfig = {
+  id: "00000000-0000-0000-0000-000000000000",
   name: "Estilo Barbearia VIP",
   address: "Rua Exemplo, 123",
   city: "São Paulo, SP",
   whatsapp: "5511999999999",
-  workingHours: {
-    start: "09:00",
-    end: "19:00"
+  openingTime: "09:00",
+  closingTime: "19:00",
+  automation: {
+    enabled: true,
+    apiUrl: 'https://api.textmebot.com/send.php',
+    apiKey: 'Ba9nZksmFsnv',
+    mensagemPadrao: 'Olá {cliente}! Confirmação de agendamento na {barbearia}:\n\n📅 Data: {data}\n⏰ Horário: {horario}\n✂️ Serviço: {servico}\n📍 Endereço: {endereco}\n\nAguardamos você! 🤙'
   }
 };
 
@@ -197,23 +207,38 @@ export const BarberShopProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     async function loadConfig() {
       try {
-        const { data, error } = await supabase
+        const { data: configData, error: configError } = await supabase
           .from('configuracoes')
           .select('*')
           .limit(1);
 
-        if (error) throw error;
+        if (configError) throw configError;
 
-        if (data && data.length > 0) {
-          const configData = data[0];
+        if (configData && configData.length > 0) {
+          // Buscar configurações de automação
+          const { data: automacaoData, error: automacaoError } = await supabase
+            .from('automacao')
+            .select('*')
+            .eq('barbearia_id', configData[0].id)
+            .single();
+
+          if (automacaoError && automacaoError.code !== 'PGRST116') {
+            console.error('Erro ao carregar configurações de automação:', automacaoError);
+          }
+
           const newConfig = {
-            name: configData.nome || defaultConfig.name,
-            address: configData.endereco || defaultConfig.address,
-            city: configData.cidade || defaultConfig.city,
-            whatsapp: configData.whatsapp || defaultConfig.whatsapp,
-            workingHours: {
-              start: configData.horario_inicio || defaultConfig.workingHours.start,
-              end: configData.horario_fim || defaultConfig.workingHours.end
+            id: configData[0].id,
+            name: configData[0].nome || defaultConfig.name,
+            address: configData[0].endereco || defaultConfig.address,
+            city: configData[0].cidade || defaultConfig.city,
+            whatsapp: configData[0].whatsapp || defaultConfig.whatsapp,
+            openingTime: configData[0].horario_inicio || defaultConfig.openingTime,
+            closingTime: configData[0].horario_fim || defaultConfig.closingTime,
+            automation: {
+              enabled: automacaoData?.enabled || defaultConfig.automation?.enabled || false,
+              apiUrl: automacaoData?.api_url || defaultConfig.automation?.apiUrl || '',
+              apiKey: automacaoData?.api_key || defaultConfig.automation?.apiKey || '',
+              mensagemPadrao: automacaoData?.mensagem_padrao || defaultConfig.automation?.mensagemPadrao || ''
             }
           };
           setConfig(newConfig);
@@ -234,29 +259,81 @@ export const BarberShopProvider = ({ children }: { children: ReactNode }) => {
   // Funções de gerenciamento
   const updateConfig = async (newConfig: BarberShopConfig) => {
     try {
-      // Primeiro, deletar todas as configurações existentes
-      const { error: deleteError } = await supabase
-        .from('configuracoes')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Deleta todos os registros
+      console.log('Atualizando configurações:', newConfig); // Debug
 
-      if (deleteError) throw deleteError;
-
-      // Depois, inserir a nova configuração
-      const { error: insertError } = await supabase
+      // Atualizar a configuração existente
+      const { data: configData, error: updateError } = await supabase
         .from('configuracoes')
-        .insert({
+        .update({
           nome: newConfig.name,
           endereco: newConfig.address,
           cidade: newConfig.city,
           whatsapp: newConfig.whatsapp,
-          horario_inicio: newConfig.workingHours.start,
-          horario_fim: newConfig.workingHours.end
-        });
+          horario_inicio: newConfig.openingTime,
+          horario_fim: newConfig.closingTime
+        })
+        .eq('id', newConfig.id)
+        .select()
+        .single();
 
-      if (insertError) throw insertError;
+      if (updateError) {
+        console.error('Erro ao atualizar configurações:', updateError);
+        throw updateError;
+      }
+
+      // Se houver configurações de automação, salvá-las
+      if (newConfig.automation) {
+        console.log('Atualizando automação:', newConfig.automation); // Debug
+
+        // Primeiro, verificar se já existe uma configuração de automação
+        const { data: existingAutomacao, error: checkError } = await supabase
+          .from('automacao')
+          .select('*')
+          .eq('barbearia_id', newConfig.id)
+          .single();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          console.error('Erro ao verificar configurações de automação:', checkError);
+          throw checkError;
+        }
+
+        if (existingAutomacao) {
+          // Atualizar configuração existente
+          const { error: updateError } = await supabase
+            .from('automacao')
+            .update({
+              enabled: newConfig.automation.enabled,
+              api_url: newConfig.automation.apiUrl,
+              api_key: newConfig.automation.apiKey,
+              mensagem_padrao: newConfig.automation.mensagemPadrao
+            })
+            .eq('barbearia_id', newConfig.id);
+
+          if (updateError) {
+            console.error('Erro ao atualizar configurações de automação:', updateError);
+            throw updateError;
+          }
+        } else {
+          // Inserir nova configuração
+          const { error: insertAutomacaoError } = await supabase
+            .from('automacao')
+            .insert({
+              barbearia_id: newConfig.id,
+              enabled: newConfig.automation.enabled,
+              api_url: newConfig.automation.apiUrl,
+              api_key: newConfig.automation.apiKey,
+              mensagem_padrao: newConfig.automation.mensagemPadrao
+            });
+
+          if (insertAutomacaoError) {
+            console.error('Erro ao inserir configurações de automação:', insertAutomacaoError);
+            throw insertAutomacaoError;
+          }
+        }
+      }
 
       setConfig(newConfig);
+      console.log('Configurações atualizadas com sucesso'); // Debug
     } catch (error) {
       console.error('Erro ao atualizar configurações:', error);
       throw error;
@@ -542,8 +619,8 @@ export const BarberShopProvider = ({ children }: { children: ReactNode }) => {
     const serviceDuration = selectedService.duration;
     
     // Gerar slots de horário com base no horário de funcionamento
-    const [startHour, startMinute] = config.workingHours.start.split(':').map(Number);
-    const [endHour, endMinute] = config.workingHours.end.split(':').map(Number);
+    const [startHour, startMinute] = config.openingTime.split(':').map(Number);
+    const [endHour, endMinute] = config.closingTime.split(':').map(Number);
     
     const startTime = startHour * 60 + startMinute;
     const endTime = endHour * 60 + endMinute;
