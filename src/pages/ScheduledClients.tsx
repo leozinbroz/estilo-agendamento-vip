@@ -400,11 +400,15 @@ const ScheduledClients = () => {
                     numeroCliente = '55' + numeroCliente;
                   }
                   
-                  // Construir mensagem
+                  // Construir mensagem com os valores reais
                   const mensagem = `Olá ${client?.name}! Seu horário está agendado para *${dataFormatada} às ${horaFormatada}* Aguardamos você 🤙`;
+                  
+                  console.log('Mensagem montada:', mensagem); // Debug
                   
                   // Construir URL da API sem duplicar o parâmetro recipient
                   const apiUrl = `https://api.textmebot.com/send.php?recipient=${numeroCliente}&apikey=${config.automation?.apiKey}&text=${encodeURIComponent(mensagem)}`;
+                  
+                  console.log('URL da API:', apiUrl); // Debug
                   
                   const response = await fetch(apiUrl, {
                     method: 'GET',
