@@ -512,54 +512,20 @@ const Settings = () => {
                   <p className="text-sm text-barber-light mb-2">
                     URL base da API
                   </p>
-                  <div className="flex gap-2">
-                    <Input
-                      id="apiUrl"
-                      value={barberConfig.automation?.apiUrl || ''}
-                      onChange={(e) => {
-                        setBarberConfig({
-                          ...barberConfig,
-                          automation: {
-                            ...barberConfig.automation!,
-                            apiUrl: e.target.value
-                          }
-                        });
-                      }}
-                      placeholder="https://sua-api.com"
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={async () => {
-                        try {
-                          const response = await fetch(`${barberConfig.automation?.apiUrl}?recipient=5511999999999&apikey=${barberConfig.automation?.apiKey}&text=Teste de conexão`, {
-                            method: 'GET',
-                            headers: {
-                              'Accept': 'application/json',
-                              'Content-Type': 'application/json'
-                            }
-                          });
-                          
-                          if (!response.ok) {
-                            throw new Error(`Erro na API: ${response.status}`);
-                          }
-                          
-                          toast({
-                            title: "Conexão bem sucedida",
-                            description: "A API está funcionando corretamente."
-                          });
-                        } catch (error) {
-                          console.error('Erro ao testar API:', error);
-                          toast({
-                            title: "Erro na conexão",
-                            description: "Não foi possível conectar com a API. Verifique a URL e a chave.",
-                            variant: "destructive"
-                          });
+                  <Input
+                    id="apiUrl"
+                    value={barberConfig.automation?.apiUrl || ''}
+                    onChange={(e) => {
+                      setBarberConfig({
+                        ...barberConfig,
+                        automation: {
+                          ...barberConfig.automation!,
+                          apiUrl: e.target.value
                         }
-                      }}
-                    >
-                      Testar
-                    </Button>
-                  </div>
+                      });
+                    }}
+                    placeholder="https://sua-api.com"
+                  />
                 </div>
 
                 <div className="bg-barber-dark p-3 rounded-lg border border-gray-700">

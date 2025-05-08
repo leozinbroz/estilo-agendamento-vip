@@ -71,12 +71,6 @@ const Clients = () => {
     };
   };
 
-  // Enviar mensagem de WhatsApp
-  const sendWhatsApp = (phone: string) => {
-    const formattedPhone = phone.replace(/\D/g, '');
-    window.open(`https://wa.me/${formattedPhone}`, '_blank');
-  };
-
   // Função para deletar cliente
   const handleDeleteClient = async (client) => {
     setDeleting(true);
@@ -142,14 +136,6 @@ const Clients = () => {
                       </div>
                       
                       <div className="flex flex-col gap-2 items-end">
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => sendWhatsApp(client.phone)}
-                          className="text-green-500 border-green-500 hover:bg-green-500/20"
-                        >
-                          WhatsApp
-                        </Button>
                         <Button
                           size="icon"
                           variant="destructive"
