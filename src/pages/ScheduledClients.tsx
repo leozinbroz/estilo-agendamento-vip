@@ -414,15 +414,17 @@ const ScheduledClients = () => {
                     method: 'GET',
                     mode: 'cors',
                     headers: {
-                      'Accept': 'application/json',
-                      'Content-Type': 'application/json',
+                      'Accept': 'text/plain',
+                      'Content-Type': 'text/plain',
                       'Origin': 'https://barbeariapro.vercel.app'
                     }
                   });
 
-                  console.log('Resposta da API:', await response.text()); // Debug da resposta
+                  const responseText = await response.text();
+                  console.log('Resposta da API:', responseText); // Debug da resposta
 
-                  if (response.ok) {
+                  // Verifica se a resposta contém "success" ou "OK"
+                  if (responseText.toLowerCase().includes('success') || responseText.toLowerCase().includes('ok')) {
                     toast({
                       title: "Mensagem enviada",
                       description: "A mensagem foi enviada com sucesso."
