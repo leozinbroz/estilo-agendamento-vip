@@ -20,6 +20,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon, Clock, Scissors, Phone, Edit, Trash2, CheckCircle, AlertCircle, X, MessageCircle, Pencil, Bell } from 'lucide-react';
 import { Select as SimpleSelect, SelectTrigger as SimpleSelectTrigger, SelectValue as SimpleSelectValue, SelectContent as SimpleSelectContent, SelectItem as SimpleSelectItem } from '@/components/ui/select';
+import { format } from 'date-fns';
 
 // Formato de valor em moeda BR
 const formatCurrency = (value: number) => {
@@ -400,26 +401,29 @@ const ScheduledClients = () => {
                   }
                   
                   // Construir mensagem
-                  const mensagem = `Olá ${client?.name}! Seu horário está agendado para *${dataFormatada} às ${horaFormatada}* Aguardamos você 🤙 ✅`;
+                  const mensagem = `Olá ${client?.name}! Seu horário está agendado para *${dataFormatada} às ${horaFormatada}* Aguardamos você 🤙`;
                   
-                  // Construir URL da API
-                  const apiUrl = `http://api.textmebot.com/send.php?recipient=${numeroCliente}&apikey=${config.automation?.apiKey}&text=${encodeURIComponent(mensagem)}`;
+                  // Usa o proxy CORS do textmebot
+                  const apiUrl = `https://api.textmebot.com/send.php?recipient=${numeroCliente}&apikey=${config.automation?.apiKey}&text=${encodeURIComponent(mensagem)}`;
                   
-                  // Enviar mensagem via fetch com modo no-cors
                   const response = await fetch(apiUrl, {
                     method: 'GET',
-                    mode: 'no-cors',
+                    mode: 'cors',
                     headers: {
-                      'Accept': 'application/json'
+                      'Accept': 'application/json',
+                      'Content-Type': 'application/json',
+                      'Origin': 'https://barbeariapro.vercel.app'
                     }
                   });
-                  
-                  // Como estamos usando no-cors, não podemos verificar response.ok
-                  // Mas sabemos que a API retorna 200 quando a mensagem é enviada
-                  toast({
-                    title: "Mensagem enviada",
-                    description: "A mensagem foi enviada com sucesso."
-                  });
+
+                  if (response.ok) {
+                    toast({
+                      title: "Mensagem enviada",
+                      description: "A mensagem foi enviada com sucesso."
+                    });
+                  } else {
+                    throw new Error('Falha ao enviar mensagem');
+                  }
                 } catch (error) {
                   console.error('Erro ao enviar mensagem:', error);
                   toast({
