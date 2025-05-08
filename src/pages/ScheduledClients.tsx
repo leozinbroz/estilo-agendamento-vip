@@ -405,8 +405,8 @@ const ScheduledClients = () => {
                   
                   console.log('Mensagem montada:', mensagem); // Debug
                   
-                  // Construir URL da API com diferentes parâmetros
-                  const apiUrl = `https://api.textmebot.com/send.php?recipient=${numeroCliente}&apikey=${config.automation?.apiKey}&text=${encodeURIComponent(mensagem)}&template=false`;
+                  // Construir URL da API usando o parâmetro message e forçando o template personalizado
+                  const apiUrl = `https://api.textmebot.com/send.php?recipient=${numeroCliente}&apikey=${config.automation?.apiKey}&message=${encodeURIComponent(mensagem)}&template=false&custom=true`;
                   
                   console.log('URL da API:', apiUrl); // Debug
                   
