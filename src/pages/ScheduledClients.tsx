@@ -405,8 +405,8 @@ const ScheduledClients = () => {
                   
                   console.log('Mensagem montada:', mensagem); // Debug
                   
-                  // Construir URL da API sem duplicar o parâmetro recipient
-                  const apiUrl = `https://api.textmebot.com/send.php?recipient=${numeroCliente}&apikey=${config.automation?.apiKey}&text=${encodeURIComponent(mensagem)}`;
+                  // Construir URL da API usando o parâmetro message em vez de text
+                  const apiUrl = `https://api.textmebot.com/send.php?recipient=${numeroCliente}&apikey=${config.automation?.apiKey}&message=${encodeURIComponent(mensagem)}`;
                   
                   console.log('URL da API:', apiUrl); // Debug
                   
