@@ -403,7 +403,7 @@ const ScheduledClients = () => {
                   // Construir mensagem
                   const mensagem = `Olá ${client?.name}! Seu horário está agendado para *${dataFormatada} às ${horaFormatada}* Aguardamos você 🤙`;
                   
-                  // Usa o proxy CORS do textmebot
+                  // Construir URL da API sem duplicar o parâmetro recipient
                   const apiUrl = `https://api.textmebot.com/send.php?recipient=${numeroCliente}&apikey=${config.automation?.apiKey}&text=${encodeURIComponent(mensagem)}`;
                   
                   const response = await fetch(apiUrl, {
