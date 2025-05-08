@@ -405,8 +405,8 @@ const ScheduledClients = () => {
                   
                   console.log('Mensagem montada:', mensagem); // Debug
                   
-                  // Construir URL da API usando o parâmetro message em vez de text
-                  const apiUrl = `https://api.textmebot.com/send.php?recipient=${numeroCliente}&apikey=${config.automation?.apiKey}&message=${encodeURIComponent(mensagem)}`;
+                  // Construir URL da API com diferentes parâmetros
+                  const apiUrl = `https://api.textmebot.com/send.php?recipient=${numeroCliente}&apikey=${config.automation?.apiKey}&text=${encodeURIComponent(mensagem)}&template=false`;
                   
                   console.log('URL da API:', apiUrl); // Debug
                   
@@ -419,6 +419,8 @@ const ScheduledClients = () => {
                       'Origin': 'https://barbeariapro.vercel.app'
                     }
                   });
+
+                  console.log('Resposta da API:', await response.text()); // Debug da resposta
 
                   if (response.ok) {
                     toast({
